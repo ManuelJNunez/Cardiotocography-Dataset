@@ -25,16 +25,23 @@ def read_data(file_name):
     X_data = data[:,:-2]
     y_fhr = data[:,-2]
     y_nsp = data[:,-1]
+
     return X_data, y_fhr, y_nsp, feature_names
 
 def plot_histogram(data, feature_names):
+    nsubplots = 25
+    fig, ax = plt.subplots(np.sqrt(nsubplots).astype(int), np.sqrt(nsubplots).astype(int), figsize=(15, 15), constrained_layout=True)
+    ax = ax.reshape(nsubplots)
 
     for i in range(data.shape[1]):
-        ax = plt.subplot(5, 5, i+1)
-        ax.hist(data[:,i], bins='doane')
-        ax.set_title(feature_names[i])
+        ax[i].hist(data[:,i], bins='doane')
+        ax[i].set_title(feature_names[i])
+
+    for i in range(data.shape[1], nsubplots):
+        fig.delaxes(ax[i])
 
     plt.show()
+    stop()
 
 data_file = 'CTG.xls'
 
@@ -48,6 +55,7 @@ def plot_class_distribution(y_data, class_names):
     plt.show()
     stop()
 
-X_data, y_fhr, y_nsp = read_data(data_file)
+X_data, y_fhr, y_nsp, feature_names = read_data(data_file)
 plot_class_distribution(y_fhr, ('A', 'B', 'C', 'D', 'SH', 'AD', 'DE', 'LD', 'FS', 'SUSP'))
 plot_class_distribution(y_nsp, ('Normal', 'Suspect', 'Pathologic'))
+plot_histogram(X_data, feature_names)
