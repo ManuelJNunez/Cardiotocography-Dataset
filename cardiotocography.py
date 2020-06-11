@@ -92,14 +92,14 @@ plot_features_correlation(X_data, feature_names[:-2])
 
 X_train, X_test, y_train, y_test = train_test_split(X_data, y_fhr, train_size=0.7, random_state=1)
 
-clf_linear_normalized = make_pipeline(Normalizer(), SGDClassifier(loss='log'))
+clf_linear_normalized = make_pipeline(Normalizer(norm='max'), SGDClassifier(loss='log'))
 clf_linear_normalized.fit(X_train, y_train)
 
 print("Bondad del modelo de SGDClassifier con características normalizadas")
 y_pred = clf_linear_normalized.predict(X_train)
 print(f"Ein = {f1_score(y_train, y_pred, average='weighted')}")
 y_pred = clf_linear_normalized.predict(X_test)
-print(f"Eout = {f1_score(y_test, y_pred, average='weighted')}")
+print(f"Etest = {f1_score(y_test, y_pred, average='weighted')}")
 
 clf_linear_standarized = make_pipeline(StandardScaler(), SGDClassifier(loss='log'))
 clf_linear_standarized.fit(X_train, y_train)
@@ -110,4 +110,4 @@ print("Bondad del modelo de SGDClassifier con características estandarizadas")
 y_pred = clf_linear_standarized.predict(X_train)
 print(f"Ein = {f1_score(y_train, y_pred, average='weighted')}")
 y_pred = clf_linear_standarized.predict(X_test)
-print(f"Eout = {f1_score(y_test, y_pred, average='weighted')}")
+print(f"Etest = {f1_score(y_test, y_pred, average='weighted')}")
