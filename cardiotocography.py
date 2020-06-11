@@ -10,7 +10,7 @@ import pandas as pd
 import pathlib as pl
 import matplotlib.pyplot as plt
 from sklearn.model_selection import train_test_split
-from sklearn.preprocessing import Normalizer
+from sklearn.preprocessing import MinMaxScaler
 from sklearn.preprocessing import StandardScaler
 from sklearn.pipeline import make_pipeline
 from sklearn.linear_model import SGDClassifier
@@ -92,7 +92,7 @@ plot_features_correlation(X_data, feature_names[:-2])
 
 X_train, X_test, y_train, y_test = train_test_split(X_data, y_fhr, train_size=0.7, random_state=1)
 
-clf_linear_normalized = make_pipeline(Normalizer(norm='max'), SGDClassifier(loss='log'))
+clf_linear_normalized = make_pipeline(MinMaxScaler(), SGDClassifier(loss='log'))
 clf_linear_normalized.fit(X_train, y_train)
 
 print("Bondad del modelo de SGDClassifier con características normalizadas para el modelo de 10 clases")
