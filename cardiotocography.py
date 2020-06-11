@@ -101,10 +101,10 @@ print(f"Ein = {f1_score(y_train, y_pred, average='weighted')}")
 y_pred = clf_linear_normalized.predict(X_test)
 print(f"Etest = {f1_score(y_test, y_pred, average='weighted')}")
 
+stop()
+
 clf_linear_standarized = make_pipeline(StandardScaler(), SGDClassifier(loss='log'))
 clf_linear_standarized.fit(X_train, y_train)
-
-stop()
 
 print("Bondad del modelo de SGDClassifier con características estandarizadas")
 y_pred = clf_linear_standarized.predict(X_train)
