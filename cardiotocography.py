@@ -95,7 +95,7 @@ X_train, X_test, y_train, y_test = train_test_split(X_data, y_fhr, train_size=0.
 clf_linear_normalized = make_pipeline(Normalizer(norm='max'), SGDClassifier(loss='log'))
 clf_linear_normalized.fit(X_train, y_train)
 
-print("Bondad del modelo de SGDClassifier con características normalizadas")
+print("Bondad del modelo de SGDClassifier con características normalizadas para el modelo de 10 clases")
 y_pred = clf_linear_normalized.predict(X_train)
 print(f"Ein = {f1_score(y_train, y_pred, average='weighted')}")
 y_pred = clf_linear_normalized.predict(X_test)
@@ -106,7 +106,7 @@ stop()
 clf_linear_standarized = make_pipeline(StandardScaler(), SGDClassifier(loss='log'))
 clf_linear_standarized.fit(X_train, y_train)
 
-print("Bondad del modelo de SGDClassifier con características estandarizadas")
+print("Bondad del modelo de SGDClassifier con características estandarizadas para el modelo de 10 clases")
 y_pred = clf_linear_standarized.predict(X_train)
 print(f"Ein = {f1_score(y_train, y_pred, average='weighted')}")
 y_pred = clf_linear_standarized.predict(X_test)
