@@ -16,6 +16,7 @@ from sklearn.pipeline import Pipeline
 from sklearn.linear_model import SGDClassifier
 from sklearn.metrics import f1_score
 from sklearn.model_selection import GridSearchCV
+from sklearn.svm import SVC
 
 np.random.seed(1)
 
@@ -110,10 +111,39 @@ clf_sgd = GridSearchCV(pipe_sgd, param_grid, scoring='f1_weighted', n_jobs=-1)
 clf_sgd.fit(X_train, y_train)
 
 print(f"Parámetros usados para ajustar el modelo de SGDClassifier: {clf_sgd.best_params_}")
-
 print("\nBondad del modelo de SGDClassifier con características estandarizadas para el modelo de 10 clases")
 y_pred = clf_sgd.predict(X_train)
 print(f"Ein = {f1_score(y_train, y_pred, average='weighted')}")
 y_pred = clf_sgd.predict(X_test)
 print(f"Etest = {f1_score(y_test, y_pred, average='weighted')}")
 print(f"Ecv = {clf_sgd.best_score_}")
+
+stop()
+
+pipe_svm = Pipeline(steps=[('scaler', StandardScaler()), ('svm', SVC())])
+param_grid = [
+    {
+    'scaler': [StandardScaler(), MinMaxScaler()],
+    'svm__kernel': ['poly'],
+    'svm__degree': [3, 4, 5, 6, 7],
+    'svm__gamma': ['scale', 'auto'],
+    'svm__C': [1, 10, 100, 1000],
+    },
+    {
+    'scaler': [StandardScaler(), MinMaxScaler()],
+    'svm__kernel': ['rbf'],
+    'svm__gamma': ['scale', 'auto'],
+    'svm__C': [1, 10, 100, 1000],
+    }
+]
+
+clf_svm = GridSearchCV(pipe_svm, param_grid, scoring='f1_weighted', n_jobs=-1)
+clf_svm.fit(X_train, y_train)
+
+print(f"Parámetros usados para ajustar el modelo de SVM: {clf_svm.best_params_}")
+print("\nBondad del modelo de SGDClassifier con características estandarizadas para el modelo de 10 clases")
+y_pred = clf_svm.predict(X_train)
+print(f"Ein = {f1_score(y_train, y_pred, average='weighted')}")
+y_pred = clf_svm.predict(X_test)
+print(f"Etest = {f1_score(y_test, y_pred, average='weighted')}")
+print(f"Ecv = {clf_svm.best_score_}")
