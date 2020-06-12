@@ -102,6 +102,7 @@ param_grid = {
     'scaler': [StandardScaler(), MinMaxScaler()],
     'sgd__loss': ['log'],
     'sgd__penalty': ['l1', 'l2'],
+    'sgd__class_weight': [None, 'balanced'],
     'sgd__n_jobs': [-1],
     'sgd__alpha': [1e-4, 1e-3, 1e-2, 1e-1],
     'sgd__random_state': [1]
@@ -127,12 +128,14 @@ param_grid = [
     'svm__kernel': ['poly'],
     'svm__degree': [3, 4, 5, 6, 7],
     'svm__gamma': ['scale', 'auto'],
+    'svm__class_weight': [None, 'balanced'],
     'svm__C': [1, 10, 100, 1000],
     },
     {
     'scaler': [StandardScaler(), MinMaxScaler()],
     'svm__kernel': ['rbf'],
     'svm__gamma': ['scale', 'auto'],
+    'svm__class_weight': [None, 'balanced'],
     'svm__C': [1, 10, 100, 1000],
     }
 ]
