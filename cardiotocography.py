@@ -95,15 +95,14 @@ plot_features_correlation(X_data, feature_names[:-2])
 
 X_train, X_test, y_train, y_test = train_test_split(X_data, y_fhr, train_size=0.7, random_state=1)
 
-stop()
-
 # Ajuste y selección de parámetros SGDClassifier
-pipe_linear_standarized = Pipeline(steps=[('scaler' ,StandardScaler()), ('sgd', SGDClassifier(loss='log'))])
+pipe_linear_standarized = Pipeline(steps=[('scaler' ,StandardScaler()), ('sgd', SGDClassifier())])
 param_grid = {
     'scaler': [StandardScaler(), MinMaxScaler()],
+    'sgd__loss': ['log'],
     'sgd__penalty': ['l1', 'l2'],
     'sgd__n_jobs': [-1],
-    'sgd__alpha': [1e-4, 1e-3, 1e-2, 1e-1]
+    'sgd__alpha': [1e-4, 1e-3, 1e-2, 1e-1],
 }
 
 clf_linear_standarized = GridSearchCV(pipe_linear_standarized, param_grid, scoring='f1_weighted', n_jobs=-1)
