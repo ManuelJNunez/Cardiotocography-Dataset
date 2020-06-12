@@ -12,9 +12,12 @@ import matplotlib.pyplot as plt
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import MinMaxScaler
 from sklearn.preprocessing import StandardScaler
-from sklearn.pipeline import make_pipeline
+from sklearn.pipeline import Pipeline
 from sklearn.linear_model import SGDClassifier
 from sklearn.metrics import f1_score
+from sklearn.model_selection import GridSearchCV
+
+np.random.seed(1)
 
 # Función auxiliar para detener la ejecución del script entre cada apartado
 def stop():
@@ -92,22 +95,25 @@ plot_features_correlation(X_data, feature_names[:-2])
 
 X_train, X_test, y_train, y_test = train_test_split(X_data, y_fhr, train_size=0.7, random_state=1)
 
-clf_linear_normalized = make_pipeline(MinMaxScaler(), SGDClassifier(loss='log'))
-clf_linear_normalized.fit(X_train, y_train)
-
-print("Bondad del modelo de SGDClassifier con características normalizadas para el modelo de 10 clases")
-y_pred = clf_linear_normalized.predict(X_train)
-print(f"Ein = {f1_score(y_train, y_pred, average='weighted')}")
-y_pred = clf_linear_normalized.predict(X_test)
-print(f"Etest = {f1_score(y_test, y_pred, average='weighted')}")
-
 stop()
 
-clf_linear_standarized = make_pipeline(StandardScaler(), SGDClassifier(loss='log'))
+# Ajuste y selección de parámetros SGDClassifier
+pipe_linear_standarized = Pipeline(steps=[('scaler' ,StandardScaler()), ('sgd', SGDClassifier(loss='log'))])
+param_grid = {
+    'scaler': [StandardScaler(), MinMaxScaler()],
+    'sgd__penalty': ['l1', 'l2'],
+    'sgd__n_jobs': [-1],
+    'sgd__alpha': [1e-4, 1e-3, 1e-2, 1e-1]
+}
+
+clf_linear_standarized = GridSearchCV(pipe_linear_standarized, param_grid, scoring='f1_weighted', n_jobs=-1)
 clf_linear_standarized.fit(X_train, y_train)
 
-print("Bondad del modelo de SGDClassifier con características estandarizadas para el modelo de 10 clases")
+print(f"Parámetros usados para ajustar el modelo de SGDClassifier: {clf_linear_standarized.best_params_}")
+
+print("\nBondad del modelo de SGDClassifier con características estandarizadas para el modelo de 10 clases")
 y_pred = clf_linear_standarized.predict(X_train)
 print(f"Ein = {f1_score(y_train, y_pred, average='weighted')}")
 y_pred = clf_linear_standarized.predict(X_test)
 print(f"Etest = {f1_score(y_test, y_pred, average='weighted')}")
+print(f"Ecv = {clf_linear_standarized.best_score_}")
