@@ -96,23 +96,24 @@ plot_features_correlation(X_data, feature_names[:-2])
 X_train, X_test, y_train, y_test = train_test_split(X_data, y_fhr, train_size=0.7, random_state=1)
 
 # Ajuste y selección de parámetros SGDClassifier
-pipe_linear_standarized = Pipeline(steps=[('scaler' ,StandardScaler()), ('sgd', SGDClassifier())])
+pipe_sgd = Pipeline(steps=[('scaler' ,StandardScaler()), ('sgd', SGDClassifier())])
 param_grid = {
     'scaler': [StandardScaler(), MinMaxScaler()],
     'sgd__loss': ['log'],
     'sgd__penalty': ['l1', 'l2'],
     'sgd__n_jobs': [-1],
     'sgd__alpha': [1e-4, 1e-3, 1e-2, 1e-1],
+    'sgd__random_state': [1]
 }
 
-clf_linear_standarized = GridSearchCV(pipe_linear_standarized, param_grid, scoring='f1_weighted', n_jobs=-1)
-clf_linear_standarized.fit(X_train, y_train)
+clf_sgd = GridSearchCV(pipe_sgd, param_grid, scoring='f1_weighted', n_jobs=-1)
+clf_sgd.fit(X_train, y_train)
 
-print(f"Parámetros usados para ajustar el modelo de SGDClassifier: {clf_linear_standarized.best_params_}")
+print(f"Parámetros usados para ajustar el modelo de SGDClassifier: {clf_sgd.best_params_}")
 
 print("\nBondad del modelo de SGDClassifier con características estandarizadas para el modelo de 10 clases")
-y_pred = clf_linear_standarized.predict(X_train)
+y_pred = clf_sgd.predict(X_train)
 print(f"Ein = {f1_score(y_train, y_pred, average='weighted')}")
-y_pred = clf_linear_standarized.predict(X_test)
+y_pred = clf_sgd.predict(X_test)
 print(f"Etest = {f1_score(y_test, y_pred, average='weighted')}")
-print(f"Ecv = {clf_linear_standarized.best_score_}")
+print(f"Ecv = {clf_sgd.best_score_}")
