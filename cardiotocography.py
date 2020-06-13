@@ -96,7 +96,7 @@ plot_features_correlation(X_data, feature_names[:-2])
 X_train, X_test, y_train, y_test = train_test_split(X_data, y_fhr, train_size=0.7, random_state=1)
 
 # Ajuste y selección de parámetros SGDClassifier
-pipe_sgd = Pipeline(steps=[('scaler' ,StandardScaler()), ('poly', PolynomialFeatures()), ('sgd', SGDClassifier())])
+pipe_sgd = Pipeline(steps=[('scaler', 'passthrough'), ('poly', PolynomialFeatures()), ('sgd', SGDClassifier())])
 param_grid = {
     'scaler': [StandardScaler(), MinMaxScaler()],
     'poly__degree': [1],
@@ -181,7 +181,7 @@ param_grid = [
 #print(f"Ecv = {clf_nlt.best_score_}")
 stop()
 
-pipe_rf = Pipeline(steps=[('scaler', StandardScaler()), ('randomforest', RandomForestClassifier())])
+pipe_rf = Pipeline(steps=[('scaler', 'passthrough'), ('randomforest', RandomForestClassifier())])
 param_grid = {
     'scaler': [StandardScaler(), MinMaxScaler()],
     'randomforest__n_estimators': [100, 200, 250, 300],
