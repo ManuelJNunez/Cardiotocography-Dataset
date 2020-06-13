@@ -15,7 +15,6 @@ from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import (MinMaxScaler, PolynomialFeatures,
                                    StandardScaler)
 from sklearn.svm import SVC
-from sklearn.preprocessing import PolynomialFeatures
 from sklearn.ensemble import RandomForestClassifier
 
 np.random.seed(1)
