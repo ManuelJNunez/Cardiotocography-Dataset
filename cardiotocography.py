@@ -154,8 +154,6 @@ y_pred = clf_svm.predict(X_test)
 print(f"Etest = {f1_score(y_test, y_pred, average='weighted')}")
 print(f"Ecv = {clf_svm.best_score_}")
 
-<<<<<<< HEAD
-
 # Prueba de funciones no lineales
 
 pipe_nlt = Pipeline([('scaler', 'passthrough'), ('poly', PolynomialFeatures()), ('clf', LogisticRegressionCV(random_state=0))])
@@ -168,6 +166,10 @@ param_grid = [
     }
 ]
 
+# Está comentado porque tarda muchísimo
+# Y da error de convergencia siempre. #Eso se puede arreglar subiendo el máx iters, pero entonces tardaría aún más xddd
+# Será cosa del solver?
+
 #clf_nlt = GridSearchCV(pipe_nlt, param_grid, scoring='f1_weighted', n_jobs=-1)
 #clf_nlt.fit(X_train, y_train)
 #
@@ -178,7 +180,6 @@ param_grid = [
 #y_pred = clf_nlt.predict(X_test)
 #print(f"Etest = {f1_score(y_test, y_pred, average='weighted')}")
 #print(f"Ecv = {clf_nlt.best_score_}")
-=======
 stop()
 
 pipe_rf = Pipeline(steps=[('scaler', StandardScaler()), ('randomforest', RandomForestClassifier())])
@@ -202,4 +203,3 @@ print(f"Ein = {f1_score(y_train, y_pred, average='weighted')}")
 y_pred = clf_rf.predict(X_test)
 print(f"Etest = {f1_score(y_test, y_pred, average='weighted')}")
 print(f"Ecv = {clf_rf.best_score_}")
->>>>>>> 048b5bae7f1bb1dc63bd293c01aacdd37df41705
