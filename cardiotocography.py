@@ -17,6 +17,8 @@ from sklearn.linear_model import SGDClassifier
 from sklearn.metrics import f1_score
 from sklearn.model_selection import GridSearchCV
 from sklearn.svm import SVC
+from sklearn.preprocessing import PolynomialFeatures
+from sklearn.ensemble import RandomForestClassifier
 
 np.random.seed(1)
 
@@ -97,9 +99,10 @@ plot_features_correlation(X_data, feature_names[:-2])
 X_train, X_test, y_train, y_test = train_test_split(X_data, y_fhr, train_size=0.7, random_state=1)
 
 # Ajuste y selección de parámetros SGDClassifier
-pipe_sgd = Pipeline(steps=[('scaler' ,StandardScaler()), ('sgd', SGDClassifier())])
+pipe_sgd = Pipeline(steps=[('scaler' ,StandardScaler()), ('poly', PolynomialFeatures()), ('sgd', SGDClassifier())])
 param_grid = {
     'scaler': [StandardScaler(), MinMaxScaler()],
+    'poly__degree': [1],
     'sgd__loss': ['log'],
     'sgd__penalty': ['l1', 'l2'],
     'sgd__class_weight': [None, 'balanced'],
@@ -130,6 +133,7 @@ param_grid = [
     'svm__gamma': ['scale', 'auto'],
     'svm__class_weight': [None, 'balanced'],
     'svm__C': [1, 10, 100, 1000],
+    'svm__random_state': [1]
     },
     {
     'scaler': [StandardScaler(), MinMaxScaler()],
@@ -137,6 +141,7 @@ param_grid = [
     'svm__gamma': ['scale', 'auto'],
     'svm__class_weight': [None, 'balanced'],
     'svm__C': [1, 10, 100, 1000],
+    'svm__random_state': [1]
     }
 ]
 
@@ -144,9 +149,33 @@ clf_svm = GridSearchCV(pipe_svm, param_grid, scoring='f1_weighted', n_jobs=-1)
 clf_svm.fit(X_train, y_train)
 
 print(f"Parámetros usados para ajustar el modelo de SVM: {clf_svm.best_params_}")
-print("\nBondad del modelo de SGDClassifier con características estandarizadas para el modelo de 10 clases")
+print("\nBondad del modelo de SVM con características estandarizadas para el modelo de 10 clases")
 y_pred = clf_svm.predict(X_train)
 print(f"Ein = {f1_score(y_train, y_pred, average='weighted')}")
 y_pred = clf_svm.predict(X_test)
 print(f"Etest = {f1_score(y_test, y_pred, average='weighted')}")
 print(f"Ecv = {clf_svm.best_score_}")
+
+stop()
+
+pipe_rf = Pipeline(steps=[('scaler', StandardScaler()), ('randomforest', RandomForestClassifier())])
+param_grid = {
+    'scaler': [StandardScaler(), MinMaxScaler()],
+    'randomforest__n_estimators': [100, 200, 250, 300],
+    'randomforest__criterion': ['gini', 'entropy'],
+    'randomforest__max_features': ['sqrt'],
+    'randomforest__class_weight': ['balanced', 'balanced_subsample'],
+    'randomforest__n_jobs': [-1],
+    'randomforest__random_state': [1]
+}
+
+clf_rf = GridSearchCV(pipe_rf, param_grid, scoring='f1_weighted', n_jobs=-1)
+clf_rf.fit(X_train, y_train)
+
+print(f"Parámetros usados para ajustar el modelo de RandonForest: {clf_rf.best_params_}")
+print("\nBondad del modelo de RandomForest con características estandarizadas para el modelo de 10 clases")
+y_pred = clf_rf.predict(X_train)
+print(f"Ein = {f1_score(y_train, y_pred, average='weighted')}")
+y_pred = clf_rf.predict(X_test)
+print(f"Etest = {f1_score(y_test, y_pred, average='weighted')}")
+print(f"Ecv = {clf_rf.best_score_}")
