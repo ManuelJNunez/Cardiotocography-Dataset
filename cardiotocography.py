@@ -4,18 +4,16 @@
 #####     LIBRERIAS     #####
 #############################
 import pathlib as pl
+
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
-import pathlib as pl
-import matplotlib.pyplot as plt
-from sklearn.model_selection import train_test_split
-from sklearn.preprocessing import MinMaxScaler
-from sklearn.preprocessing import StandardScaler
+from sklearn.linear_model import LogisticRegressionCV, SGDClassifier
+from sklearn.metrics import balanced_accuracy_score, f1_score
+from sklearn.model_selection import GridSearchCV, train_test_split
 from sklearn.pipeline import Pipeline
-from sklearn.linear_model import SGDClassifier
-from sklearn.metrics import f1_score
-from sklearn.model_selection import GridSearchCV
+from sklearn.preprocessing import (MinMaxScaler, PolynomialFeatures,
+                                   StandardScaler)
 from sklearn.svm import SVC
 
 np.random.seed(1)
@@ -121,7 +119,7 @@ print(f"Ecv = {clf_sgd.best_score_}")
 
 stop()
 
-pipe_svm = Pipeline(steps=[('scaler', StandardScaler()), ('svm', SVC())])
+pipe_svm = Pipeline(steps=[('scaler', 'passthrough'), ('svm', SVC())])
 param_grid = [
     {
     'scaler': [StandardScaler(), MinMaxScaler()],
@@ -150,3 +148,27 @@ print(f"Ein = {f1_score(y_train, y_pred, average='weighted')}")
 y_pred = clf_svm.predict(X_test)
 print(f"Etest = {f1_score(y_test, y_pred, average='weighted')}")
 print(f"Ecv = {clf_svm.best_score_}")
+
+
+# Prueba de funciones no lineales
+
+pipe_nlt = Pipeline([('scaler', 'passthrough'), ('poly', PolynomialFeatures()), ('clf', LogisticRegressionCV(random_state=0))])
+param_grid = [
+    {
+    'scaler': [StandardScaler(), MinMaxScaler()],
+    'poly__degree': [2, 3],
+    'clf__solver': ['liblinear', 'saga'],
+    'clf__penalty': ['l1', 'l2'],
+    }
+]
+
+#clf_nlt = GridSearchCV(pipe_nlt, param_grid, scoring='f1_weighted', n_jobs=-1)
+#clf_nlt.fit(X_train, y_train)
+#
+#print(f"Parámetros usados para ajustar el modelo de Regresión Logística con NLT: {clf_nlt.best_params_}")
+#print("\nBondad del modelo de Regresión Logística con características estandarizadas para el modelo de 10 clases")
+#y_pred = clf_nlt.predict(X_train)
+#print(f"Ein = {f1_score(y_train, y_pred, average='weighted')}")
+#y_pred = clf_nlt.predict(X_test)
+#print(f"Etest = {f1_score(y_test, y_pred, average='weighted')}")
+#print(f"Ecv = {clf_nlt.best_score_}")
