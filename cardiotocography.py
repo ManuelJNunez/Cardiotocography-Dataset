@@ -4,7 +4,6 @@
 #####     LIBRERIAS     #####
 #############################
 import pathlib as pl
-
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
@@ -15,7 +14,8 @@ from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import (MinMaxScaler, PolynomialFeatures,
                                    StandardScaler)
 from sklearn.svm import SVC
-from sklearn.ensemble import RandomForestClassifier
+from sklearn.ensemble import RandomForestClassifier, AdaBoostClassifier
+from sklearn.tree import DecisionTreeClassifier
 
 np.random.seed(1)
 
@@ -185,6 +185,7 @@ pipe_rf = Pipeline(steps=[('scaler', 'passthrough'), ('randomforest', RandomFore
 param_grid = {
     'scaler': [StandardScaler(), MinMaxScaler()],
     'randomforest__n_estimators': [100, 200, 250, 300],
+    'randomforest__max_depth': [10, 11, 12],
     'randomforest__criterion': ['gini', 'entropy'],
     'randomforest__max_features': ['sqrt'],
     'randomforest__class_weight': ['balanced', 'balanced_subsample'],
@@ -195,10 +196,31 @@ param_grid = {
 clf_rf = GridSearchCV(pipe_rf, param_grid, scoring='f1_weighted', n_jobs=-1)
 clf_rf.fit(X_train, y_train)
 
-print(f"Parámetros usados para ajustar el modelo de RandonForest: {clf_rf.best_params_}")
+print(f"Parámetros usados para ajustar el modelo de RandomForest: {clf_rf.best_params_}")
 print("\nBondad del modelo de RandomForest con características estandarizadas para el modelo de 10 clases")
 y_pred = clf_rf.predict(X_train)
 print(f"Ein = {f1_score(y_train, y_pred, average='weighted')}")
 y_pred = clf_rf.predict(X_test)
 print(f"Etest = {f1_score(y_test, y_pred, average='weighted')}")
 print(f"Ecv = {clf_rf.best_score_}")
+
+stop()
+
+pipe_ab = Pipeline(steps=[('scaler', 'passthrough'), ('adaboost', AdaBoostClassifier())])
+param_grid = {
+    'scaler': [StandardScaler(), MinMaxScaler()],
+    'adaboost__n_estimators': [50, 100, 200, 250, 300],
+    'adaboost__base_estimator': [DecisionTreeClassifier(max_depth=1), DecisionTreeClassifier(max_depth=3), DecisionTreeClassifier(max_depth=6)],
+    'adaboost__random_state': [1]
+}
+
+clf_ab = GridSearchCV(pipe_ab, param_grid, scoring='f1_weighted', n_jobs=-1)
+clf_ab.fit(X_train, y_train)
+
+print(f"Parámetros usados para ajustar el modelo de AdaBoost: {clf_ab.best_params_}")
+print("\nBondad del modelo de AdaBoost con características estandarizadas para el modelo de 10 clases")
+y_pred = clf_ab.predict(X_train)
+print(f"Ein = {f1_score(y_train, y_pred, average='weighted')}")
+y_pred = clf_ab.predict(X_test)
+print(f"Etest = {f1_score(y_test, y_pred, average='weighted')}")
+print(f"Ecv = {clf_ab.best_score_}")
