@@ -7,7 +7,7 @@ import pathlib as pl
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
-from sklearn.linear_model import LogisticRegressionCV, SGDClassifier
+from sklearn.linear_model import LogisticRegression, SGDClassifier
 from sklearn.metrics import balanced_accuracy_score, f1_score
 from sklearn.model_selection import GridSearchCV, train_test_split
 from sklearn.pipeline import Pipeline
@@ -121,6 +121,38 @@ print(f"Ecv = {clf_sgd.best_score_}")
 
 stop()
 
+# Prueba de funciones no lineales
+pipe_nlt = Pipeline([('scaler', 'passthrough'), ('poly', PolynomialFeatures()), ('clf', LogisticRegression(random_state=1, max_iter=3000))])
+param_grid = [
+    {
+        'scaler': [StandardScaler(), MinMaxScaler()],
+        'clf__C': [1, 10],
+        'poly__degree': [1],
+        'clf__solver': ['newton-cg', 'lbfgs', 'sag'],
+        'clf__penalty': ['l2'],
+    },
+    {
+        'scaler': [StandardScaler(), MinMaxScaler()],
+        'clf__C': [1, 10],
+        'poly__degree': [1],
+        'clf__solver': ['liblinear'],
+        'clf__penalty': ['l1', 'l2'],
+    }
+]
+
+clf_nlt = GridSearchCV(pipe_nlt, param_grid, scoring='f1_weighted', n_jobs=-1)
+clf_nlt.fit(X_train, y_train)
+
+print(f"Parámetros usados para ajustar el modelo de Regresión Logística con NLT: {clf_nlt.best_params_}")
+print("\nBondad del modelo de Regresión Logística con características estandarizadas para el modelo de 10 clases")
+y_pred = clf_nlt.predict(X_train)
+print(f"Ein = {f1_score(y_train, y_pred, average='weighted')}")
+y_pred = clf_nlt.predict(X_test)
+print(f"Etest = {f1_score(y_test, y_pred, average='weighted')}")
+print(f"Ecv = {clf_nlt.best_score_}")
+
+stop()
+
 pipe_svm = Pipeline(steps=[('scaler', 'passthrough'), ('svm', SVC())])
 param_grid = [
     {
@@ -137,7 +169,7 @@ param_grid = [
     'svm__kernel': ['rbf'],
     'svm__gamma': ['scale', 'auto'],
     'svm__class_weight': [None, 'balanced'],
-    'svm__C': [1, 10, 100, 1000],
+    'svm__C': [1, 10, 100, 150, 200],
     'svm__random_state': [1]
     }
 ]
@@ -153,32 +185,6 @@ y_pred = clf_svm.predict(X_test)
 print(f"Etest = {f1_score(y_test, y_pred, average='weighted')}")
 print(f"Ecv = {clf_svm.best_score_}")
 
-# Prueba de funciones no lineales
-
-pipe_nlt = Pipeline([('scaler', 'passthrough'), ('poly', PolynomialFeatures()), ('clf', LogisticRegressionCV(random_state=0))])
-param_grid = [
-    {
-    'scaler': [StandardScaler(), MinMaxScaler()],
-    'poly__degree': [2, 3],
-    'clf__solver': ['liblinear', 'saga'],
-    'clf__penalty': ['l1', 'l2'],
-    }
-]
-
-# Está comentado porque tarda muchísimo
-# Y da error de convergencia siempre. #Eso se puede arreglar subiendo el máx iters, pero entonces tardaría aún más xddd
-# Será cosa del solver?
-
-#clf_nlt = GridSearchCV(pipe_nlt, param_grid, scoring='f1_weighted', n_jobs=-1)
-#clf_nlt.fit(X_train, y_train)
-#
-#print(f"Parámetros usados para ajustar el modelo de Regresión Logística con NLT: {clf_nlt.best_params_}")
-#print("\nBondad del modelo de Regresión Logística con características estandarizadas para el modelo de 10 clases")
-#y_pred = clf_nlt.predict(X_train)
-#print(f"Ein = {f1_score(y_train, y_pred, average='weighted')}")
-#y_pred = clf_nlt.predict(X_test)
-#print(f"Etest = {f1_score(y_test, y_pred, average='weighted')}")
-#print(f"Ecv = {clf_nlt.best_score_}")
 stop()
 
 pipe_rf = Pipeline(steps=[('scaler', 'passthrough'), ('randomforest', RandomForestClassifier())])
