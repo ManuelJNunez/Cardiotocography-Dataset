@@ -217,7 +217,7 @@ y_pred = clf_rf.predict(X_test)
 print(f"Etest = {f1_score(y_test_fhr, y_pred, average='weighted')}")
 print(f"Ecv = {clf_rf.best_score_}")
 
-print(f"Mejores hiperparámetros para este modelo: {clf_rf.best_params_}")
+print(f"\nMejores hiperparámetros para este modelo: {clf_rf.best_params_}")
 
 stop()
 
@@ -240,4 +240,4 @@ y_pred = clf_ab.predict(X_test)
 print(f"Etest = {f1_score(y_test_fhr, y_pred, average='weighted')}")
 print(f"Ecv = {clf_ab.best_score_}")
 
-print(f"Mejores hiperparámetros para este modelo: {clf_ab.best_params_}")
+print(f"\nMejores hiperparámetros para este modelo: {clf_ab.best_params_}")
