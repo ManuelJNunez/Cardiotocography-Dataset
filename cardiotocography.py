@@ -158,7 +158,7 @@ param_grid = [
     {
     'scaler': [StandardScaler(), MinMaxScaler()],
     'svm__kernel': ['poly'],
-    'svm__degree': [3, 4, 5, 6, 7],
+    'svm__degree': [1,2, 3],
     'svm__gamma': ['scale', 'auto'],
     'svm__class_weight': [None, 'balanced'],
     'svm__C': [1, 10, 100, 1000],
@@ -217,7 +217,8 @@ param_grid = {
     'scaler': [StandardScaler(), MinMaxScaler()],
     'adaboost__n_estimators': [50, 100, 200, 250, 300],
     'adaboost__base_estimator': [DecisionTreeClassifier(max_depth=1), DecisionTreeClassifier(max_depth=3), DecisionTreeClassifier(max_depth=6)],
-    'adaboost__random_state': [1]
+    'adaboost__random_state': [1],
+    'adaboost__learning_rate': [0.01, 0.1, 1]
 }
 
 clf_ab = GridSearchCV(pipe_ab, param_grid, scoring='f1_weighted', n_jobs=-1)
