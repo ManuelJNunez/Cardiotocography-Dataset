@@ -117,6 +117,7 @@ plot_features_correlation(X_data, feature_names[:-2])
 # Separamos el conjunto de datos en conjunto de train y test
 # Como el número de instancias (2126) es suficientemente alto, separamos en 70% training y 30% test
 X_train, X_test, y_train, y_test = train_test_split(X_data, y_fhr, train_size=0.7, random_state=1)
+X_train, X_test, y_train_fhr, y_test_fhr, y_train_nsp, y_test_nsp = train_test_split(X_data, y_fhr, y_nsp, train_size=0.7, random_state=1)
 
 # Regresión Lineal:
 pipe_rl = Pipeline(steps=[('scaler', 'passthrough'), ('poly', PolynomialFeatures()), ('solver', 'passthrough')])
@@ -167,14 +168,14 @@ param_grid = {
 }
 
 clf_sgd = GridSearchCV(pipe_sgd, param_grid, scoring='f1_weighted', n_jobs=-1)
-clf_sgd.fit(X_train, y_train)
+clf_sgd.fit(X_train, y_train_fhr)
 
 print(f"Parámetros usados para ajustar el modelo de SGDClassifier: {clf_sgd.best_params_}")
 print("\nBondad del modelo de SGDClassifier con características estandarizadas para el modelo de 10 clases")
 y_pred = clf_sgd.predict(X_train)
-print(f"Ein = {f1_score(y_train, y_pred, average='weighted')}")
+print(f"Ein = {f1_score(y_train_fhr, y_pred, average='weighted')}")
 y_pred = clf_sgd.predict(X_test)
-print(f"Etest = {f1_score(y_test, y_pred, average='weighted')}")
+print(f"Etest = {f1_score(y_test_fhr, y_pred, average='weighted')}")
 print(f"Ecv = {clf_sgd.best_score_}")
 
 stop()
@@ -199,14 +200,14 @@ param_grid = [
 ]
 
 clf_nlt = GridSearchCV(pipe_nlt, param_grid, scoring='f1_weighted', n_jobs=-1)
-clf_nlt.fit(X_train, y_train)
+clf_nlt.fit(X_train, y_train_fhr)
 
 print(f"Parámetros usados para ajustar el modelo de Regresión Logística con NLT: {clf_nlt.best_params_}")
 print("\nBondad del modelo de Regresión Logística con características estandarizadas para el modelo de 10 clases")
 y_pred = clf_nlt.predict(X_train)
-print(f"Ein = {f1_score(y_train, y_pred, average='weighted')}")
+print(f"Ein = {f1_score(y_train_fhr, y_pred, average='weighted')}")
 y_pred = clf_nlt.predict(X_test)
-print(f"Etest = {f1_score(y_test, y_pred, average='weighted')}")
+print(f"Etest = {f1_score(y_test_fhr, y_pred, average='weighted')}")
 print(f"Ecv = {clf_nlt.best_score_}")
 
 stop()
@@ -216,7 +217,7 @@ param_grid = [
     {
     'scaler': [StandardScaler(), MinMaxScaler()],
     'svm__kernel': ['poly'],
-    'svm__degree': [3, 4, 5, 6, 7],
+    'svm__degree': [1,2, 3],
     'svm__gamma': ['scale', 'auto'],
     'svm__class_weight': [None, 'balanced'],
     'svm__C': [1, 10, 100, 1000],
@@ -233,14 +234,14 @@ param_grid = [
 ]
 
 clf_svm = GridSearchCV(pipe_svm, param_grid, scoring='f1_weighted', n_jobs=-1)
-clf_svm.fit(X_train, y_train)
+clf_svm.fit(X_train, y_train_fhr)
 
 print(f"Parámetros usados para ajustar el modelo de SVM: {clf_svm.best_params_}")
 print("\nBondad del modelo de SVM con características estandarizadas para el modelo de 10 clases")
 y_pred = clf_svm.predict(X_train)
-print(f"Ein = {f1_score(y_train, y_pred, average='weighted')}")
+print(f"Ein = {f1_score(y_train_fhr, y_pred, average='weighted')}")
 y_pred = clf_svm.predict(X_test)
-print(f"Etest = {f1_score(y_test, y_pred, average='weighted')}")
+print(f"Etest = {f1_score(y_test_fhr, y_pred, average='weighted')}")
 print(f"Ecv = {clf_svm.best_score_}")
 
 stop()
@@ -258,14 +259,14 @@ param_grid = {
 }
 
 clf_rf = GridSearchCV(pipe_rf, param_grid, scoring='f1_weighted', n_jobs=-1)
-clf_rf.fit(X_train, y_train)
+clf_rf.fit(X_train, y_train_fhr)
 
 print(f"Parámetros usados para ajustar el modelo de RandomForest: {clf_rf.best_params_}")
 print("\nBondad del modelo de RandomForest con características estandarizadas para el modelo de 10 clases")
 y_pred = clf_rf.predict(X_train)
-print(f"Ein = {f1_score(y_train, y_pred, average='weighted')}")
+print(f"Ein = {f1_score(y_train_fhr, y_pred, average='weighted')}")
 y_pred = clf_rf.predict(X_test)
-print(f"Etest = {f1_score(y_test, y_pred, average='weighted')}")
+print(f"Etest = {f1_score(y_test_fhr, y_pred, average='weighted')}")
 print(f"Ecv = {clf_rf.best_score_}")
 
 stop()
@@ -275,17 +276,18 @@ param_grid = {
     'scaler': [StandardScaler(), MinMaxScaler()],
     'adaboost__n_estimators': [50, 100, 200, 250, 300],
     'adaboost__base_estimator': [DecisionTreeClassifier(max_depth=1), DecisionTreeClassifier(max_depth=3), DecisionTreeClassifier(max_depth=6)],
-    'adaboost__random_state': [1]
+    'adaboost__random_state': [1],
+    'adaboost__learning_rate': [0.01, 0.1, 1]
 }
 
 clf_ab = GridSearchCV(pipe_ab, param_grid, scoring='f1_weighted', n_jobs=-1)
-clf_ab.fit(X_train, y_train)
+clf_ab.fit(X_train, y_train_fhr)
 
 print(f"Parámetros usados para ajustar el modelo de AdaBoost: {clf_ab.best_params_}")
 print("\nBondad del modelo de AdaBoost con características estandarizadas para el modelo de 10 clases")
 y_pred = clf_ab.predict(X_train)
-print(f"Ein = {f1_score(y_train, y_pred, average='weighted')}")
+print(f"Ein = {f1_score(y_train_fhr, y_pred, average='weighted')}")
 y_pred = clf_ab.predict(X_test)
-print(f"Etest = {f1_score(y_test, y_pred, average='weighted')}")
+print(f"Etest = {f1_score(y_test_fhr, y_pred, average='weighted')}")
 print(f"Ecv = {clf_ab.best_score_}")
 """
