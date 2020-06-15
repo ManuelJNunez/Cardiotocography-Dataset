@@ -1,20 +1,31 @@
 # -*- coding: utf-8 -*-
+# Universidad de Granada
+# Grado en Ingeniería Informática
+# Aprendizaje Automático
+# Curso 2019/2020
+
+# Proyecto Final: Ajuste del mejor modelo 
+# Dataset: Cardiotocography (https://archive.ics.uci.edu/ml/datasets/cardiotocography)
+
+# Manuel Jesús Núñez 
+# Javier Rodríguez Rodríguez 
 
 #############################
 #####     LIBRERIAS     #####
 #############################
 import pathlib as pl
+
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
-from sklearn.linear_model import LogisticRegression, SGDClassifier
+from sklearn.ensemble import AdaBoostClassifier, RandomForestClassifier
+from sklearn.linear_model import LogisticRegression, LogisticRegressionCV, SGDClassifier
 from sklearn.metrics import balanced_accuracy_score, f1_score
 from sklearn.model_selection import GridSearchCV, train_test_split
 from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import (MinMaxScaler, PolynomialFeatures,
                                    StandardScaler)
 from sklearn.svm import SVC
-from sklearn.ensemble import RandomForestClassifier, AdaBoostClassifier
 from sklearn.tree import DecisionTreeClassifier
 
 np.random.seed(1)
@@ -23,7 +34,9 @@ np.random.seed(1)
 def stop():
     input("\nPulse ENTER para continuar\n")
     
-# Función lectira de 
+# Función para lectura de datos en formato .xls
+# Los datos son separados adecuadamente en variables predictoras y clase
+# Como los datos están clasificados de dos formas distintas, se generan dos vectores de clasificación "real", uno para cada forma
 def read_data(file_name):
     data = pd.read_excel(pl.Path(__file__).parent / f"datos/{file_name}", skipfooter= 3, sheet_name= 2, header = 0)
     data.dropna(axis=0, thresh=10, inplace=True) 
@@ -36,6 +49,7 @@ def read_data(file_name):
 
     return X_data, y_fhr, y_nsp, feature_names
 
+# Función auxiliar para la graficación de histogramas
 def plot_histogram(data, feature_names):
     nsubplots = 25
     fig, ax = plt.subplots(np.sqrt(nsubplots).astype(int), np.sqrt(nsubplots).astype(int), figsize=(15, 15), constrained_layout=True)
@@ -51,6 +65,7 @@ def plot_histogram(data, feature_names):
     plt.show()
     stop()
 
+# Función auxiliar para la graficación de diagramas de barra para comparar la proporción de clases
 def plot_class_distribution(y_data, class_names):
     classes, count = np.unique(y_data, return_counts=True)
     plt.bar(np.arange(classes.size), count)
@@ -61,6 +76,7 @@ def plot_class_distribution(y_data, class_names):
     plt.show()
     stop()
 
+# Función auxiliar para la graficación de un mapa de calor que exprese la correlación entre las variables predictoras 
 def plot_features_correlation(data, feature_names):
     corr = np.corrcoef(data, rowvar= False)
 
@@ -85,27 +101,69 @@ def plot_features_correlation(data, feature_names):
     plt.show()
     stop()
 
+# Archivo de entrada
 data_file = 'CTG.xls'
 
+# Leemos los archivos
 X_data, y_fhr, y_nsp, feature_names = read_data(data_file)
+
+# Graficamos el balance de clase 
 plot_class_distribution(y_fhr, ('A', 'B', 'C', 'D', 'SH', 'AD', 'DE', 'LD', 'FS', 'SUSP'))
 plot_class_distribution(y_nsp, ('Normal', 'Suspect', 'Pathologic'))
 #plot_histogram(X_data, feature_names)
+# y la correlación entre variables
 plot_features_correlation(X_data, feature_names[:-2])
 
+# Separamos el conjunto de datos en conjunto de train y test
+# Como el número de instancias (2126) es suficientemente alto, separamos en 70% training y 30% test
 X_train, X_test, y_train, y_test = train_test_split(X_data, y_fhr, train_size=0.7, random_state=1)
 
+# Regresión Lineal:
+pipe_rl = Pipeline(steps=[('scaler', 'passthrough'), ('poly', PolynomialFeatures()), ('solver', 'passthrough')])
+param_grid = [{
+    'scaler': [StandardScaler(), MinMaxScaler()],
+    'poly__degree': [1, 2, 3],
+    'solver': [SGDClassifier()],
+    'solver__loss': ['log'],
+    'solver__penalty': ['l1', 'l2'],
+    'solver__class_weight': [None, 'balanced'],
+    'solver__n_jobs': [-1],
+    'solver__alpha': [1e-4, 1e-3, 1e-2, 1e-1],
+    'solver__random_state': [1]
+    },
+    {
+    'scaler': [StandardScaler(), MinMaxScaler()],
+    'poly__degree': [1, 2, 3],
+    'solver': [LogisticRegressionCV(penalty='l2', random_state=1, max_iter=3000)],
+    'solver__solver': ['newton-cg', 'lbfgs'],
+    },
+    {
+    'scaler': [StandardScaler(), MinMaxScaler()],
+    'poly__degree': [1, 2, 3],
+    'solver': [LogisticRegressionCV(random_state=1, max_iter=3000)],
+    'solver__solver': ['liblinear', 'saga'],
+    'solver__penalty': ['l1', 'l2'],
+    }
+]
+
+clf_rl = GridSearchCV(pipe_rl, param_grid, scoring='f1_weighted', n_jobs=-1).fit(X_train, y_train)
+
+
+print(f"Parámetros usados para ajustar el modelo de Regresión lineal: {clf_rl.best_params_}")
+print("\nBondad del modelo de SGDClassifier con características estandarizadas para el modelo de 10 clases")
+y_pred = clf_rl.predict(X_train)
+print(f"Ein = {f1_score(y_train, y_pred, average='weighted')}")
+y_pred = clf_rl.predict(X_test)
+print(f"Etest = {f1_score(y_test, y_pred, average='weighted')}")
+print(f"Ecv = {clf_rl.best_score_}")
+
+"""
 # Ajuste y selección de parámetros SGDClassifier
 pipe_sgd = Pipeline(steps=[('scaler', 'passthrough'), ('poly', PolynomialFeatures()), ('sgd', SGDClassifier())])
 param_grid = {
     'scaler': [StandardScaler(), MinMaxScaler()],
     'poly__degree': [1],
     'sgd__loss': ['log'],
-    'sgd__penalty': ['l1', 'l2'],
-    'sgd__class_weight': [None, 'balanced'],
-    'sgd__n_jobs': [-1],
-    'sgd__alpha': [1e-4, 1e-3, 1e-2, 1e-1],
-    'sgd__random_state': [1]
 }
 
 clf_sgd = GridSearchCV(pipe_sgd, param_grid, scoring='f1_weighted', n_jobs=-1)
@@ -127,15 +185,15 @@ param_grid = [
     {
         'scaler': [StandardScaler(), MinMaxScaler()],
         'clf__C': [1, 10],
-        'poly__degree': [1],
+        'poly__degree': [1, 2],
         'clf__solver': ['newton-cg', 'lbfgs', 'sag'],
         'clf__penalty': ['l2'],
     },
     {
         'scaler': [StandardScaler(), MinMaxScaler()],
         'clf__C': [1, 10],
-        'poly__degree': [1],
-        'clf__solver': ['liblinear'],
+        'poly__degree': [1, 2],
+        'clf__solver': ['liblinear', 'saga'],
         'clf__penalty': ['l1', 'l2'],
     }
 ]
@@ -230,3 +288,4 @@ print(f"Ein = {f1_score(y_train, y_pred, average='weighted')}")
 y_pred = clf_ab.predict(X_test)
 print(f"Etest = {f1_score(y_test, y_pred, average='weighted')}")
 print(f"Ecv = {clf_ab.best_score_}")
+"""
