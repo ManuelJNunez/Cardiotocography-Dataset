@@ -95,6 +95,11 @@ plot_features_correlation(X_data, feature_names[:-2])
 
 X_train, X_test, y_train_fhr, y_test_fhr, y_train_nsp, y_test_nsp = train_test_split(X_data, y_fhr, y_nsp, train_size=0.7, random_state=1)
 
+
+print(f"\033[92;1;4mCLASIFICACIÓN CON 10 CLASES\033[0m")
+
+stop()
+
 # Ajuste y selección de parámetros SGDClassifier
 pipe_sgd = Pipeline(steps=[('scaler', 'passthrough'), ('poly', PolynomialFeatures()), ('sgd', SGDClassifier())])
 param_grid = {
@@ -111,13 +116,14 @@ param_grid = {
 clf_sgd = GridSearchCV(pipe_sgd, param_grid, scoring='f1_weighted', n_jobs=-1)
 clf_sgd.fit(X_train, y_train_fhr)
 
-print(f"Parámetros usados para ajustar el modelo de SGDClassifier: {clf_sgd.best_params_}")
-print("\nBondad del modelo de SGDClassifier con características estandarizadas para el modelo de 10 clases")
+print(f"\033[94;1;1mSGDClassifier\033[0m")
 y_pred = clf_sgd.predict(X_train)
 print(f"Ein = {f1_score(y_train_fhr, y_pred, average='weighted')}")
 y_pred = clf_sgd.predict(X_test)
 print(f"Etest = {f1_score(y_test_fhr, y_pred, average='weighted')}")
 print(f"Ecv = {clf_sgd.best_score_}")
+
+print(f"\nMejores hiperparámetros para este modelo: {clf_sgd.best_params_}")
 
 stop()
 
@@ -143,13 +149,14 @@ param_grid = [
 clf_nlt = GridSearchCV(pipe_nlt, param_grid, scoring='f1_weighted', n_jobs=-1)
 clf_nlt.fit(X_train, y_train_fhr)
 
-print(f"Parámetros usados para ajustar el modelo de Regresión Logística con NLT: {clf_nlt.best_params_}")
-print("\nBondad del modelo de Regresión Logística con características estandarizadas para el modelo de 10 clases")
+print(f"\033[94;1;1mRegresión Logística\033[0m")
 y_pred = clf_nlt.predict(X_train)
 print(f"Ein = {f1_score(y_train_fhr, y_pred, average='weighted')}")
 y_pred = clf_nlt.predict(X_test)
 print(f"Etest = {f1_score(y_test_fhr, y_pred, average='weighted')}")
 print(f"Ecv = {clf_nlt.best_score_}")
+
+print(f"\nMejores hiperparámetros para este modelo: {clf_nlt.best_params_}")
 
 stop()
 
@@ -177,13 +184,14 @@ param_grid = [
 clf_svm = GridSearchCV(pipe_svm, param_grid, scoring='f1_weighted', n_jobs=-1)
 clf_svm.fit(X_train, y_train_fhr)
 
-print(f"Parámetros usados para ajustar el modelo de SVM: {clf_svm.best_params_}")
-print("\nBondad del modelo de SVM con características estandarizadas para el modelo de 10 clases")
+print(f"\033[94;1;1mSupport Vector Machine\033[0m")
 y_pred = clf_svm.predict(X_train)
 print(f"Ein = {f1_score(y_train_fhr, y_pred, average='weighted')}")
 y_pred = clf_svm.predict(X_test)
 print(f"Etest = {f1_score(y_test_fhr, y_pred, average='weighted')}")
 print(f"Ecv = {clf_svm.best_score_}")
+
+print(f"\nMejores hiperparámetros para este modelo: {clf_svm.best_params_}")
 
 stop()
 
@@ -202,13 +210,14 @@ param_grid = {
 clf_rf = GridSearchCV(pipe_rf, param_grid, scoring='f1_weighted', n_jobs=-1)
 clf_rf.fit(X_train, y_train_fhr)
 
-print(f"Parámetros usados para ajustar el modelo de RandomForest: {clf_rf.best_params_}")
-print("\nBondad del modelo de RandomForest con características estandarizadas para el modelo de 10 clases")
+print(f"\033[94;1;1mRandomForestClassifier\033[0m")
 y_pred = clf_rf.predict(X_train)
 print(f"Ein = {f1_score(y_train_fhr, y_pred, average='weighted')}")
 y_pred = clf_rf.predict(X_test)
 print(f"Etest = {f1_score(y_test_fhr, y_pred, average='weighted')}")
 print(f"Ecv = {clf_rf.best_score_}")
+
+print(f"Mejores hiperparámetros para este modelo: {clf_rf.best_params_}")
 
 stop()
 
@@ -224,10 +233,11 @@ param_grid = {
 clf_ab = GridSearchCV(pipe_ab, param_grid, scoring='f1_weighted', n_jobs=-1)
 clf_ab.fit(X_train, y_train_fhr)
 
-print(f"Parámetros usados para ajustar el modelo de AdaBoost: {clf_ab.best_params_}")
-print("\nBondad del modelo de AdaBoost con características estandarizadas para el modelo de 10 clases")
+print(f"\033[94;1;1mAdaBoostClassifier\033[0m")
 y_pred = clf_ab.predict(X_train)
 print(f"Ein = {f1_score(y_train_fhr, y_pred, average='weighted')}")
 y_pred = clf_ab.predict(X_test)
 print(f"Etest = {f1_score(y_test_fhr, y_pred, average='weighted')}")
 print(f"Ecv = {clf_ab.best_score_}")
+
+print(f"Mejores hiperparámetros para este modelo: {clf_ab.best_params_}")
