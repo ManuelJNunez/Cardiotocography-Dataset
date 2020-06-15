@@ -93,7 +93,7 @@ plot_class_distribution(y_nsp, ('Normal', 'Suspect', 'Pathologic'))
 #plot_histogram(X_data, feature_names)
 plot_features_correlation(X_data, feature_names[:-2])
 
-X_train, X_test, y_train, y_test = train_test_split(X_data, y_fhr, train_size=0.7, random_state=1)
+X_train, X_test, y_train_fhr, y_test_fhr, y_train_nsp, y_test_nsp = train_test_split(X_data, y_fhr, y_nsp, train_size=0.7, random_state=1)
 
 # Ajuste y selección de parámetros SGDClassifier
 pipe_sgd = Pipeline(steps=[('scaler', 'passthrough'), ('poly', PolynomialFeatures()), ('sgd', SGDClassifier())])
