@@ -190,7 +190,7 @@ for i, nombre in zip(np.arange(2), ('FHR (10 clases)', 'NSP (3 clases)')):
 
     stop()
 
-    plot_confusion_matrix(clf_rl.best_estimator_, X_test, y_test[:, i], display_labels=feature_names, values_format='d')
+    plot_confusion_matrix(clf_rl.best_estimator_, X_test, y_test[:, i], display_labels=labels[i], values_format='d')
     plt.title(f"Matriz de confusión para el caso de {nombre} usando Regresión Logística")
     plt.ylabel(f"Clase verdadera")
     plt.xlabel(f"Clase predicha")
@@ -251,7 +251,7 @@ for i, nombre in zip(np.arange(2), ('FHR (10 clases)', 'NSP (3 clases)')):
     print(f"\nMejores hiperparámetros para este modelo: {clf_svm.best_params_}")
 
     stop()
-    plot_confusion_matrix(clf_svm.best_estimator_, X_test, y_test[:, i], display_labels=feature_names, values_format='d')
+    plot_confusion_matrix(clf_svm.best_estimator_, X_test, y_test[:, i], display_labels=labels[i], values_format='d')
     plt.title(f"Matriz de confusión para el caso de {nombre} usando Support Vector Machine")
     plt.ylabel(f"Clase verdadera")
     plt.xlabel(f"Clase predicha")
@@ -319,7 +319,7 @@ for i, nombre in zip(np.arange(2), ('FHR (10 clases)', 'NSP (3 clases)')):
 
     stop()
 
-    plot_confusion_matrix(clf_ab.best_estimator_, X_test, y_test[:, i], display_labels=feature_names, values_format='d')
+    plot_confusion_matrix(clf_ab.best_estimator_, X_test, y_test[:, i], display_labels=labels[i], values_format='d')
     plt.title(f"Matriz de confusión para el caso de {nombre} usando AdaBoost")
     plt.ylabel(f"Clase verdadera")
     plt.xlabel(f"Clase predicha")
