@@ -28,6 +28,7 @@ from sklearn.preprocessing import (MinMaxScaler, PolynomialFeatures,
                                    StandardScaler)
 from sklearn.svm import SVC
 from sklearn.tree import DecisionTreeClassifier
+from sklearn.decomposition import PCA
 
 np.random.seed(1)
 
@@ -202,11 +203,10 @@ for i, nombre in zip(np.arange(2), ('FHR (10 clases)', 'NSP (3 clases)')):
 
     print(f"\033[94;1;1mAjuste utilizando Support Vector Machine\033[0m")
 
-    pipe_svm = Pipeline(steps=[('scaler', 'passthrough'), ('poly', PolynomialFeatures()), ('svm', 'passthrough')])
+    pipe_svm = Pipeline(steps=[('scaler', 'passthrough'), ('pca', 'passthrough'), ('svm', 'passthrough')])
     param_grid = [
         {
         'scaler': [StandardScaler(), MinMaxScaler()],
-        'poly__degree': [1, 2],
         'svm' : [SVC()],
         'svm__kernel': ['poly'],
         'svm__degree': [1,2, 3],
@@ -217,7 +217,7 @@ for i, nombre in zip(np.arange(2), ('FHR (10 clases)', 'NSP (3 clases)')):
         },
         {
         'scaler': [StandardScaler(), MinMaxScaler()],
-        'poly__degree': [1, 2],
+        'pca': [PCA(), None],
         'svm' : [SVC()],
         'svm__kernel': ['rbf'],
         'svm__gamma': ['scale', 'auto'],
@@ -227,7 +227,6 @@ for i, nombre in zip(np.arange(2), ('FHR (10 clases)', 'NSP (3 clases)')):
         },
         {
         'scaler': [StandardScaler(), MinMaxScaler()],
-        'poly__degree': [1, 2],
         'svm': [SGDClassifier()],
         'svm__loss': ['hinge'],
         'svm__penalty': ['l1', 'l2'],
