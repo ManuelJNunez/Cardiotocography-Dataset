@@ -301,9 +301,9 @@ for i, nombre in zip(np.arange(2), ('FHR (10 clases)', 'NSP (3 clases)')):
     param_grid = {
         'scaler': [StandardScaler(), MinMaxScaler()],
         'adaboost__n_estimators': [50, 100, 200, 250, 300],
-        'adaboost__base_estimator': [DecisionTreeClassifier(max_depth=1), DecisionTreeClassifier(max_depth=5)],
+        'adaboost__base_estimator': [DecisionTreeClassifier(max_depth=1, class_weight='balanced'), DecisionTreeClassifier(max_depth=6, class_weight='balanced')],
         'adaboost__random_state': [1],
-        'adaboost__learning_rate': [0.1, 1, 1.01]
+        'adaboost__learning_rate': [1, 1.1, 1.2]
     }
 
     clf_ab = GridSearchCV(pipe_ab, param_grid, scoring='balanced_accuracy', n_jobs=-1)
