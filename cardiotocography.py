@@ -30,6 +30,7 @@ from sklearn.preprocessing import (MinMaxScaler, PolynomialFeatures,
                                    StandardScaler)
 from sklearn.svm import SVC
 from sklearn.tree import DecisionTreeClassifier
+from sklearn.decomposition import PCA
 
 np.random.seed(1)
 
@@ -136,7 +137,7 @@ for i, nombre in zip(np.arange(2), ('FHR (10 clases)', 'NSP (3 clases)')):
 
     # Usamos un pipeline para preprocesar y ajustar los datos de forma automatizada
     pipe_rl = Pipeline(steps=[('scaler', 'passthrough'), ('poly', PolynomialFeatures()), ('solver', 'passthrough')])
-
+    """
     # Para la elección de hiper-parámetros, utilizamos Cross Validation entre distintos valores para cada hiperparámetro
     # Creamos dos grids, uno para utilizar la técnica de Gradiente Descendente Estocástico (SGD), y la otra para el solucionador
     # saga incorporado en la función LogisticRegression de sklearn.
@@ -201,19 +202,20 @@ for i, nombre in zip(np.arange(2), ('FHR (10 clases)', 'NSP (3 clases)')):
     plt.show()
 
     stop()
+    """
 
     # Ajuste mediante SVM
 
     print(f"\033[94;1;1mAjuste utilizando Support Vector Machine\033[0m")
 
-    pipe_svm = Pipeline(steps=[('scaler', 'passthrough'), ('poly', PolynomialFeatures()), ('svm', 'passthrough')])
+    pipe_svm = Pipeline(steps=[('scaler', 'passthrough'), ('pca', 'passthrough'), ('svm', 'passthrough')])
     param_grid = [
         {
         'scaler': [StandardScaler(), MinMaxScaler()],
-        'poly__degree': [1, 2],
         'svm' : [SVC()],
+        'pca': [PCA(), 'passthrough'],
         'svm__kernel': ['poly'],
-        'svm__degree': [1,2, 3],
+        'svm__degree': [1, 2, 3],
         'svm__gamma': ['scale', 'auto'],
         'svm__class_weight': [None, 'balanced'],
         'svm__C': [1, 10, 100, 1000],
@@ -221,7 +223,7 @@ for i, nombre in zip(np.arange(2), ('FHR (10 clases)', 'NSP (3 clases)')):
         },
         {
         'scaler': [StandardScaler(), MinMaxScaler()],
-        'poly__degree': [1, 2],
+        'pca': [PCA(), 'passthrough'],
         'svm' : [SVC()],
         'svm__kernel': ['rbf'],
         'svm__gamma': ['scale', 'auto'],
@@ -312,7 +314,7 @@ for i, nombre in zip(np.arange(2), ('FHR (10 clases)', 'NSP (3 clases)')):
     param_grid = {
         'scaler': [StandardScaler(), MinMaxScaler()],
         'adaboost__n_estimators': [50, 100, 200, 250, 300],
-        'adaboost__base_estimator': [DecisionTreeClassifier(max_depth=1), DecisionTreeClassifier(max_depth=3), DecisionTreeClassifier(max_depth=6)],
+        'adaboost__base_estimator': [DecisionTreeClassifier(max_depth=1), DecisionTreeClassifier(max_depth=5)],
         'adaboost__random_state': [1],
         'adaboost__learning_rate': [0.01, 0.1, 1]
     }
