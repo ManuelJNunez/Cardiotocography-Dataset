@@ -207,12 +207,11 @@ for i, nombre in zip(np.arange(2), ('FHR (10 clases)', 'NSP (3 clases)')):
 
     print(f"\033[94;1;1mAjuste utilizando Support Vector Machine\033[0m")
 
-    pipe_svm = Pipeline(steps=[('scaler', 'passthrough'), ('pca', 'passthrough'), ('svm', 'passthrough')])
+    pipe_svm = Pipeline(steps=[('scaler', 'passthrough'), ('pca', 'passthrough'), ('svm', SVC())])
     param_grid = [
         {
         'scaler': [StandardScaler(), MinMaxScaler()],
         'pca': [PCA(), 'passthrough'],
-        'svm' : [SVC()],
         'svm__kernel': ['poly'],
         'svm__degree': [1, 2, 3],
         'svm__gamma': ['scale', 'auto'],
@@ -223,7 +222,6 @@ for i, nombre in zip(np.arange(2), ('FHR (10 clases)', 'NSP (3 clases)')):
         {
         'scaler': [StandardScaler(), MinMaxScaler()],
         'pca': [PCA(), 'passthrough'],
-        'svm' : [SVC()],
         'svm__kernel': ['rbf'],
         'svm__gamma': ['scale', 'auto'],
         'svm__class_weight': [None, 'balanced'],
