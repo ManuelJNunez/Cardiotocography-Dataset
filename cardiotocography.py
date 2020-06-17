@@ -7,7 +7,7 @@
 # Proyecto Final: Ajuste del mejor modelo 
 # Dataset: Cardiotocography (https://archive.ics.uci.edu/ml/datasets/cardiotocography)
 
-# Manuel Jesús Núñez 
+# Manuel Jesús Núñez Ruiz
 # Javier Rodríguez Rodríguez 
 
 #############################
@@ -211,8 +211,8 @@ for i, nombre in zip(np.arange(2), ('FHR (10 clases)', 'NSP (3 clases)')):
     param_grid = [
         {
         'scaler': [StandardScaler(), MinMaxScaler()],
-        'svm' : [SVC()],
         'pca': [PCA(), 'passthrough'],
+        'svm' : [SVC()],
         'svm__kernel': ['poly'],
         'svm__degree': [1, 2, 3],
         'svm__gamma': ['scale', 'auto'],
@@ -303,7 +303,7 @@ for i, nombre in zip(np.arange(2), ('FHR (10 clases)', 'NSP (3 clases)')):
         'adaboost__n_estimators': [50, 100, 200, 250, 300],
         'adaboost__base_estimator': [DecisionTreeClassifier(max_depth=1), DecisionTreeClassifier(max_depth=5)],
         'adaboost__random_state': [1],
-        'adaboost__learning_rate': [0.01, 0.1, 1]
+        'adaboost__learning_rate': [0.1, 1, 1.01]
     }
 
     clf_ab = GridSearchCV(pipe_ab, param_grid, scoring='balanced_accuracy', n_jobs=-1)
