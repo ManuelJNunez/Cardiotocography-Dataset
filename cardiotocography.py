@@ -19,8 +19,9 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 from sklearn.ensemble import AdaBoostClassifier, RandomForestClassifier
-from sklearn.linear_model import LogisticRegression, LogisticRegressionCV, SGDClassifier
-from sklearn.metrics import balanced_accuracy_score, f1_score
+from sklearn.linear_model import (LogisticRegression, LogisticRegressionCV,
+                                  SGDClassifier)
+from sklearn.metrics import balanced_accuracy_score, f1_score, plot_roc_curve, plot_confusion_matrix
 from sklearn.model_selection import GridSearchCV, train_test_split
 from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import (MinMaxScaler, PolynomialFeatures,
@@ -32,7 +33,8 @@ np.random.seed(1)
 
 # Función auxiliar para detener la ejecución del script entre cada apartado
 def stop():
-    input("\nPulse ENTER para continuar\n")
+    #input("\nPulse ENTER para continuar\n")
+    pass
     
 # Función para lectura de datos en formato .xls
 # Los datos son separados adecuadamente en variables predictoras y clase
@@ -43,11 +45,10 @@ def read_data(file_name):
     data.drop(columns=['FileName', 'Date', 'SegFile', 'b', 'e', 'LBE', 'A', 'B', 'C', 'D', 'E', 'AD', 'DE', 'LD', 'FS', 'SUSP', 'DR'], inplace=True)
     feature_names = data.columns
     data = np.asarray(data)
-    X_data = data[:,:-2]
-    y_fhr = data[:,-2]
-    y_nsp = data[:,-1]
+    X = data[:,:-2]
+    y = data[:,[-2, -1]]
 
-    return X_data, y_fhr, y_nsp, feature_names
+    return X, y, feature_names
 
 # Función auxiliar para la graficación de histogramas
 def plot_histogram(data, feature_names):
@@ -105,199 +106,223 @@ def plot_features_correlation(data, feature_names):
 data_file = 'CTG.xls'
 
 # Leemos los archivos
-X_data, y_fhr, y_nsp, feature_names = read_data(data_file)
+# y[0] = Clasificación FHR (10 clases)
+# y[1] = Clasificación NSP (3 clases)
+X, y, feature_names = read_data(data_file)
 
 # Graficamos el balance de clase 
-plot_class_distribution(y_fhr, ('A', 'B', 'C', 'D', 'SH', 'AD', 'DE', 'LD', 'FS', 'SUSP'))
-plot_class_distribution(y_nsp, ('Normal', 'Suspect', 'Pathologic'))
-#plot_histogram(X_data, feature_names)
-# y la correlación entre variables
-plot_features_correlation(X_data, feature_names[:-2])
+labels = [('A', 'B', 'C', 'D', 'SH', 'AD', 'DE', 'LD', 'FS', 'SUSP'), ('Normal', 'Suspect', 'Pathologic')]
+plot_class_distribution(y[:, 0], labels[0])
+plot_class_distribution(y[:, 1], labels[1])
+# la distribución de valores de cada atributo
+plot_histogram(X, feature_names)
+# y la correlación entre atributos
+plot_features_correlation(X, feature_names[:-2])
 
 # Separamos el conjunto de datos en conjunto de train y test
 # Como el número de instancias (2126) es suficientemente alto, separamos en 70% training y 30% test
-X_train, X_test, y_train, y_test = train_test_split(X_data, y_fhr, train_size=0.7, random_state=1)
-X_train, X_test, y_train_fhr, y_test_fhr, y_train_nsp, y_test_nsp = train_test_split(X_data, y_fhr, y_nsp, train_size=0.7, random_state=1)
+X_train, X_test, y_train, y_test = train_test_split(X, y, train_size=0.7, random_state=1)
 
-# Regresión Lineal:
-pipe_rl = Pipeline(steps=[('scaler', 'passthrough'), ('poly', PolynomialFeatures()), ('solver', 'passthrough')])
-param_grid = [{
-    'scaler': [StandardScaler(), MinMaxScaler()],
-    'poly__degree': [1, 2, 3],
-    'solver': [SGDClassifier()],
-    'solver__loss': ['log'],
-    'solver__penalty': ['l1', 'l2'],
-    'solver__class_weight': [None, 'balanced'],
-    'solver__n_jobs': [-1],
-    'solver__alpha': [1e-4, 1e-3, 1e-2, 1e-1],
-    'solver__random_state': [1]
-    },
-    {
-    'scaler': [StandardScaler(), MinMaxScaler()],
-    'poly__degree': [1, 2, 3],
-    'solver': [LogisticRegressionCV(penalty='l2', random_state=1, max_iter=3000)],
-    'solver__solver': ['newton-cg', 'lbfgs'],
-    },
-    {
-    'scaler': [StandardScaler(), MinMaxScaler()],
-    'poly__degree': [1, 2, 3],
-    'solver': [LogisticRegressionCV(random_state=1, max_iter=3000)],
-    'solver__solver': ['liblinear', 'saga'],
-    'solver__penalty': ['l1', 'l2'],
-    }
-]
+# Evaluamos los distintos modelos para la clasificación FHR y NSP individualmente
+for i, nombre in zip(np.arange(2), ('FHR (10 clases)', 'NSP (3 clases)')):
 
-clf_rl = GridSearchCV(pipe_rl, param_grid, scoring='f1_weighted', n_jobs=-1).fit(X_train, y_train)
+    # Clasificación utilizada
+    print(f"\033[92;1;4mCLASIFICACIÓN {nombre}\033[0m")
 
+    # Modelo 
+    print(f"\033[94;1;1mAjuste utilizando Regresión Logística (modelo lineal)\033[0m")
 
-print(f"Parámetros usados para ajustar el modelo de Regresión lineal: {clf_rl.best_params_}")
-print("\nBondad del modelo de SGDClassifier con características estandarizadas para el modelo de 10 clases")
-y_pred = clf_rl.predict(X_train)
-print(f"Ein = {f1_score(y_train, y_pred, average='weighted')}")
-y_pred = clf_rl.predict(X_test)
-print(f"Etest = {f1_score(y_test, y_pred, average='weighted')}")
-print(f"Ecv = {clf_rl.best_score_}")
+    # Usamos un pipeline para preprocesar y ajustar los datos de forma automatizada
+    pipe_rl = Pipeline(steps=[('scaler', 'passthrough'), ('poly', PolynomialFeatures()), ('solver', 'passthrough')])
 
-"""
-
-print(f"\033[92;1;4mCLASIFICACIÓN CON 10 CLASES\033[0m")
-
-stop()
-
-# Ajuste y selección de parámetros SGDClassifier
-pipe_sgd = Pipeline(steps=[('scaler', 'passthrough'), ('poly', PolynomialFeatures()), ('sgd', SGDClassifier())])
-param_grid = {
-    'scaler': [StandardScaler(), MinMaxScaler()],
-    'poly__degree': [1],
-    'sgd__loss': ['log'],
-}
-
-clf_sgd = GridSearchCV(pipe_sgd, param_grid, scoring='f1_weighted', n_jobs=-1)
-clf_sgd.fit(X_train, y_train_fhr)
-
-print(f"\033[94;1;1mSGDClassifier\033[0m")
-y_pred = clf_sgd.predict(X_train)
-print(f"Ein = {f1_score(y_train_fhr, y_pred, average='weighted')}")
-y_pred = clf_sgd.predict(X_test)
-print(f"Etest = {f1_score(y_test_fhr, y_pred, average='weighted')}")
-print(f"Ecv = {clf_sgd.best_score_}")
-
-print(f"\nMejores hiperparámetros para este modelo: {clf_sgd.best_params_}")
-
-stop()
-
-# Prueba de funciones no lineales
-pipe_nlt = Pipeline([('scaler', 'passthrough'), ('poly', PolynomialFeatures()), ('clf', LogisticRegression(random_state=1, max_iter=3000))])
-param_grid = [
-    {
+    # Para la elección de hiper-parámetros, utilizamos Cross Validation entre distintos valores para cada hiperparámetro
+    # Creamos dos grids, uno para utilizar la técnica de Gradiente Descendente Estocástico (SGD), y la otra para el solucionador
+    # saga incorporado en la función LogisticRegression de sklearn.
+    param_grid = [{
+        # Estandarización de los datos a través de dos mecanismos distintos
         'scaler': [StandardScaler(), MinMaxScaler()],
-        'clf__C': [1, 10],
+        # Evaluación de clases de funciones lineales y cuadráticas
         'poly__degree': [1, 2],
-        'clf__solver': ['newton-cg', 'lbfgs', 'sag'],
-        'clf__penalty': ['l2'],
-    },
-    {
+        'solver': [SGDClassifier()],
+        # La función de pérdida ha de ser logarítmica para que sgd ajuste un modelo de regresión logística
+        'solver__loss': ['log'],
+        # Probamos ambas funciones de regularización,
+        'solver__penalty': ['l1', 'l2'],
+        # si se aplica balanceo a los pesos,
+        'solver__class_weight': [None, 'balanced'],
+        # se utilizan todos los procesadores,
+        'solver__n_jobs': [-1],
+        # se consideran múltiples valores del parámetro alfa,
+        'solver__alpha': [1e-4, 1e-3, 1e-2, 1e-1],
+        # se fija la semilla para reproducir consistentemente la aleatoriedad
+        'solver__random_state': [1],
+        # y el máximo de iteraciones para permitir la convergencia
+        'solver__max_iter' :[100000]
+        },
+        # Para el uso de LogisticRegression el proceso es similar
+        {
         'scaler': [StandardScaler(), MinMaxScaler()],
-        'clf__C': [1, 10],
         'poly__degree': [1, 2],
-        'clf__solver': ['liblinear', 'saga'],
-        'clf__penalty': ['l1', 'l2'],
+        'solver': [LogisticRegression()],
+        # Probamos valores de C, la intensidad de la regularización
+        'solver__C' : [0.1, 1, 10],
+        # la tolerancia a 3 decimales
+        'solver__tol' : [0.001],
+        # y el solucionador
+        'solver__solver': ['saga'],
+        'solver__penalty': ['l1', 'l2'],
+        'solver__random_state' : [1],
+        'solver__max_iter' : [100000]
+        }
+    ]
+
+    # Ajustamos el mejor modelo de entre los probados con sus distintos hiperparámetro, conservando aquel que proporcione mejor f1-score con peso
+    clf_rl = GridSearchCV(pipe_rl, param_grid, scoring='f1_weighted', n_jobs=-1).fit(X_train, y_train[:, i])
+
+    # Imprimimos los resultados 
+    print(f"Parámetros usados para ajustar el modelo de Regresión lineal: {clf_rl.best_params_}")
+    print(f"\nBondad del modelo de Regresión Logística con características estandarizadas para el modelo {nombre}")
+    y_pred = clf_rl.predict(X_train)
+    print(f"Ein = {1-f1_score(y_train[:, i], y_pred, average='weighted')}")
+    y_pred = clf_rl.predict(X_test)
+    print(f"Etest = {1-f1_score(y_test[:, i], y_pred, average='weighted')}")
+    print(f"Ecv = {1-clf_rl.best_score_}")
+
+    stop()
+
+    plot_confusion_matrix(clf_rl.best_estimator_, X_test, y_test[:, i], display_labels=feature_names, values_format='d')
+    plt.title(f"Matriz de confusión para el caso de {nombre} usando Regresión Logística")
+    plt.ylabel(f"Clase verdadera")
+    plt.xlabel(f"Clase predicha")
+    plt.show()
+
+    stop()
+
+    # Ajuste mediante SVM
+
+    print(f"\033[94;1;1mAjuste utilizando Support Vector Machine\033[0m")
+
+    pipe_svm = Pipeline(steps=[('scaler', 'passthrough'), ('poly', PolynomialFeatures()), ('svm', 'passthrough')])
+    param_grid = [
+        {
+        'scaler': [StandardScaler(), MinMaxScaler()],
+        'poly__degree': [1, 2],
+        'svm' : [SVC()],
+        'svm__kernel': ['poly'],
+        'svm__degree': [1,2, 3],
+        'svm__gamma': ['scale', 'auto'],
+        'svm__class_weight': [None, 'balanced'],
+        'svm__C': [1, 10, 100, 1000],
+        'svm__random_state': [1]
+        },
+        {
+        'scaler': [StandardScaler(), MinMaxScaler()],
+        'poly__degree': [1, 2],
+        'svm' : [SVC()],
+        'svm__kernel': ['rbf'],
+        'svm__gamma': ['scale', 'auto'],
+        'svm__class_weight': [None, 'balanced'],
+        'svm__C': [1, 10, 100, 150, 200],
+        'svm__random_state': [1]
+        },
+        {
+        'scaler': [StandardScaler(), MinMaxScaler()],
+        'poly__degree': [1, 2],
+        'svm': [SGDClassifier()],
+        'svm__loss': ['hinge'],
+        'svm__penalty': ['l1', 'l2'],
+        'svm__class_weight': [None, 'balanced'],
+        'svm__n_jobs': [-1],
+        'svm__alpha': [1e-4, 1e-3, 1e-2, 1e-1],
+        'svm__random_state': [1],
+        'svm__max_iter' :[100000]
+        }
+    ]
+
+    clf_svm = GridSearchCV(pipe_svm, param_grid, scoring='f1_weighted', n_jobs=-1)
+    clf_svm.fit(X_train, y_train[:, i])
+
+    y_pred = clf_svm.predict(X_train)
+    print(f"Ein = {1-f1_score(y_train[:, i], y_pred, average='weighted')}")
+    y_pred = clf_svm.predict(X_test)
+    print(f"Etest = {1-f1_score(y_test[:, i], y_pred, average='weighted')}")
+    print(f"Ecv = {1-clf_svm.best_score_}")
+
+    print(f"\nMejores hiperparámetros para este modelo: {clf_svm.best_params_}")
+
+    stop()
+    plot_confusion_matrix(clf_svm.best_estimator_, X_test, y_test[:, i], display_labels=feature_names, values_format='d')
+    plt.title(f"Matriz de confusión para el caso de {nombre} usando Support Vector Machine")
+    plt.ylabel(f"Clase verdadera")
+    plt.xlabel(f"Clase predicha")
+    plt.show()
+
+    stop()
+
+    # Ajuste a través de Random Forest
+    print(f"\033[94;1;1mAjuste utilizando RandomForestClassifier\033[0m")
+
+    pipe_rf = Pipeline(steps=[('scaler', 'passthrough'), ('randomforest', RandomForestClassifier())])
+    param_grid = {
+        'scaler': [StandardScaler(), MinMaxScaler()],
+        'randomforest__n_estimators': [100, 200, 250, 300],
+        'randomforest__max_depth': [10, 11, 12],
+        'randomforest__criterion': ['gini', 'entropy'],
+        'randomforest__max_features': ['sqrt'],
+        'randomforest__class_weight': ['balanced', 'balanced_subsample'],
+        'randomforest__n_jobs': [-1],
+        'randomforest__random_state': [1]
     }
-]
 
-clf_nlt = GridSearchCV(pipe_nlt, param_grid, scoring='f1_weighted', n_jobs=-1)
-clf_nlt.fit(X_train, y_train_fhr)
+    clf_rf = GridSearchCV(pipe_rf, param_grid, scoring='f1_weighted', n_jobs=-1)
+    clf_rf.fit(X_train, y_train[:, i])
 
-print(f"\033[94;1;1mRegresión Logística\033[0m")
-y_pred = clf_nlt.predict(X_train)
-print(f"Ein = {f1_score(y_train_fhr, y_pred, average='weighted')}")
-y_pred = clf_nlt.predict(X_test)
-print(f"Etest = {f1_score(y_test_fhr, y_pred, average='weighted')}")
-print(f"Ecv = {clf_nlt.best_score_}")
+    y_pred = clf_rf.predict(X_train)
+    print(f"Ein = {1-f1_score(y_train[:, i], y_pred, average='weighted')}")
+    y_pred = clf_rf.predict(X_test)
+    print(f"Etest = {1-f1_score(y_test[:, i], y_pred, average='weighted')}")
+    print(f"Ecv = {1-clf_rf.best_score_}")
 
-print(f"\nMejores hiperparámetros para este modelo: {clf_nlt.best_params_}")
+    print(f"\nMejores hiperparámetros para este modelo: {clf_rf.best_params_}")
 
-stop()
+    stop()
+    plot_confusion_matrix(clf_rf.best_estimator_, X_test, y_test[:, i], display_labels=labels[i], values_format='d')
+    plt.title(f"Matriz de confusión para el caso de {nombre} usando Random Forest")
+    plt.ylabel(f"Clase verdadera")
+    plt.xlabel(f"Clase predicha")
+    plt.show()
 
-pipe_svm = Pipeline(steps=[('scaler', 'passthrough'), ('svm', SVC())])
-param_grid = [
-    {
-    'scaler': [StandardScaler(), MinMaxScaler()],
-    'svm__kernel': ['poly'],
-    'svm__degree': [1,2, 3],
-    'svm__gamma': ['scale', 'auto'],
-    'svm__class_weight': [None, 'balanced'],
-    'svm__C': [1, 10, 100, 1000],
-    'svm__random_state': [1]
-    },
-    {
-    'scaler': [StandardScaler(), MinMaxScaler()],
-    'svm__kernel': ['rbf'],
-    'svm__gamma': ['scale', 'auto'],
-    'svm__class_weight': [None, 'balanced'],
-    'svm__C': [1, 10, 100, 150, 200],
-    'svm__random_state': [1]
+    stop()
+
+    # Ajuste a través de Boosting
+    print(f"\033[94;1;1mAjuste utilizando AdaBoostClassifier\033[0m")
+
+    pipe_ab = Pipeline(steps=[('scaler', 'passthrough'), ('adaboost', AdaBoostClassifier())])
+    param_grid = {
+        'scaler': [StandardScaler(), MinMaxScaler()],
+        'adaboost__n_estimators': [50, 100, 200, 250, 300],
+        'adaboost__base_estimator': [DecisionTreeClassifier(max_depth=1), DecisionTreeClassifier(max_depth=3), DecisionTreeClassifier(max_depth=6)],
+        'adaboost__random_state': [1],
+        'adaboost__learning_rate': [0.01, 0.1, 1]
     }
-]
 
-clf_svm = GridSearchCV(pipe_svm, param_grid, scoring='f1_weighted', n_jobs=-1)
-clf_svm.fit(X_train, y_train_fhr)
+    clf_ab = GridSearchCV(pipe_ab, param_grid, scoring='f1_weighted', n_jobs=-1)
+    clf_ab.fit(X_train, y_train[:, i])
 
-print(f"\033[94;1;1mSupport Vector Machine\033[0m")
-y_pred = clf_svm.predict(X_train)
-print(f"Ein = {f1_score(y_train_fhr, y_pred, average='weighted')}")
-y_pred = clf_svm.predict(X_test)
-print(f"Etest = {f1_score(y_test_fhr, y_pred, average='weighted')}")
-print(f"Ecv = {clf_svm.best_score_}")
+    y_pred = clf_ab.predict(X_train)
+    print(f"Ein = {1-f1_score(y_train[:, i], y_pred, average='weighted')}")
+    y_pred = clf_ab.predict(X_test)
+    print(f"Etest = {1-f1_score(y_test[:, i], y_pred, average='weighted')}")
+    print(f"Ecv = {1-clf_ab.best_score_}")
 
-print(f"\nMejores hiperparámetros para este modelo: {clf_svm.best_params_}")
+    print(f"\nMejores hiperparámetros para este modelo: {clf_ab.best_params_}")
 
-stop()
+    stop()
 
-pipe_rf = Pipeline(steps=[('scaler', 'passthrough'), ('randomforest', RandomForestClassifier())])
-param_grid = {
-    'scaler': [StandardScaler(), MinMaxScaler()],
-    'randomforest__n_estimators': [100, 200, 250, 300],
-    'randomforest__max_depth': [10, 11, 12],
-    'randomforest__criterion': ['gini', 'entropy'],
-    'randomforest__max_features': ['sqrt'],
-    'randomforest__class_weight': ['balanced', 'balanced_subsample'],
-    'randomforest__n_jobs': [-1],
-    'randomforest__random_state': [1]
-}
+    plot_confusion_matrix(clf_ab.best_estimator_, X_test, y_test[:, i], display_labels=feature_names, values_format='d')
+    plt.title(f"Matriz de confusión para el caso de {nombre} usando AdaBoost")
+    plt.ylabel(f"Clase verdadera")
+    plt.xlabel(f"Clase predicha")
+    plt.show()
 
-clf_rf = GridSearchCV(pipe_rf, param_grid, scoring='f1_weighted', n_jobs=-1)
-clf_rf.fit(X_train, y_train_fhr)
-
-print(f"\033[94;1;1mRandomForestClassifier\033[0m")
-y_pred = clf_rf.predict(X_train)
-print(f"Ein = {f1_score(y_train_fhr, y_pred, average='weighted')}")
-y_pred = clf_rf.predict(X_test)
-print(f"Etest = {f1_score(y_test_fhr, y_pred, average='weighted')}")
-print(f"Ecv = {clf_rf.best_score_}")
-
-print(f"\nMejores hiperparámetros para este modelo: {clf_rf.best_params_}")
-
-stop()
-
-pipe_ab = Pipeline(steps=[('scaler', 'passthrough'), ('adaboost', AdaBoostClassifier())])
-param_grid = {
-    'scaler': [StandardScaler(), MinMaxScaler()],
-    'adaboost__n_estimators': [50, 100, 200, 250, 300],
-    'adaboost__base_estimator': [DecisionTreeClassifier(max_depth=1), DecisionTreeClassifier(max_depth=3), DecisionTreeClassifier(max_depth=6)],
-    'adaboost__random_state': [1],
-    'adaboost__learning_rate': [0.01, 0.1, 1]
-}
-
-clf_ab = GridSearchCV(pipe_ab, param_grid, scoring='f1_weighted', n_jobs=-1)
-clf_ab.fit(X_train, y_train_fhr)
-
-print(f"\033[94;1;1mAdaBoostClassifier\033[0m")
-y_pred = clf_ab.predict(X_train)
-print(f"Ein = {f1_score(y_train_fhr, y_pred, average='weighted')}")
-y_pred = clf_ab.predict(X_test)
-print(f"Etest = {f1_score(y_test_fhr, y_pred, average='weighted')}")
-print(f"Ecv = {clf_ab.best_score_}")
-"""
-
-print(f"\nMejores hiperparámetros para este modelo: {clf_ab.best_params_}")
+    stop()
