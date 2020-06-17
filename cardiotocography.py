@@ -152,7 +152,7 @@ for i, nombre in zip(np.arange(2), ('FHR (10 clases)', 'NSP (3 clases)')):
         # Probamos ambas funciones de regularización,
         'solver__penalty': ['l1', 'l2'],
         # si se aplica balanceo a los pesos,
-        'solver__class_weight': [None, 'balanced'],
+        'solver__class_weight': ['balanced'],
         # se utilizan todos los procesadores,
         'solver__n_jobs': [-1],
         # se consideran múltiples valores del parámetro alfa,
