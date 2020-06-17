@@ -21,8 +21,10 @@ import pandas as pd
 from sklearn.ensemble import AdaBoostClassifier, RandomForestClassifier
 from sklearn.linear_model import (LogisticRegression, LogisticRegressionCV,
                                   SGDClassifier)
-from sklearn.metrics import balanced_accuracy_score, f1_score, plot_roc_curve, plot_confusion_matrix
+from sklearn.metrics import (balanced_accuracy_score, classification_report,
+                             f1_score, plot_confusion_matrix, plot_roc_curve)
 from sklearn.model_selection import GridSearchCV, train_test_split
+from sklearn.neural_network import MLPClassifier
 from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import (MinMaxScaler, PolynomialFeatures,
                                    StandardScaler)
@@ -157,41 +159,43 @@ for i, nombre in zip(np.arange(2), ('FHR (10 clases)', 'NSP (3 clases)')):
         # se fija la semilla para reproducir consistentemente la aleatoriedad
         'solver__random_state': [1],
         # y el máximo de iteraciones para permitir la convergencia
-        'solver__max_iter' :[100000]
+        'solver__max_iter' :[1000000]
         },
         # Para el uso de LogisticRegression el proceso es similar
-        {
-        'scaler': [StandardScaler(), MinMaxScaler()],
-        'poly__degree': [1, 2],
-        'solver': [LogisticRegression()],
-        # Probamos valores de C, la intensidad de la regularización
-        'solver__C' : [0.1, 1, 10],
-        # la tolerancia a 3 decimales
-        'solver__tol' : [0.001],
-        # y el solucionador
-        'solver__solver': ['saga'],
-        'solver__penalty': ['l1', 'l2'],
-        'solver__random_state' : [1],
-        'solver__max_iter' : [100000]
-        }
+        #{
+        #'scaler': [StandardScaler(), MinMaxScaler()],
+        #'poly__degree': [1, 2],
+        #'solver': [LogisticRegression()],
+        ## Probamos valores de C, la intensidad de la regularización
+        #'solver__C' : [0.1, 1, 10],
+        ## la tolerancia a 3 decimales
+        #'solver__tol' : [0.001],
+        ## y el solucionador
+        #'solver__solver': ['saga'],
+        #'solver__penalty': ['l1', 'l2'],
+        #'solver__random_state' : [1],
+        #'solver__max_iter' : [100000]
+        #}
     ]
 
     # Ajustamos el mejor modelo de entre los probados con sus distintos hiperparámetro, conservando aquel que proporcione mejor f1-score con peso
-    clf_rl = GridSearchCV(pipe_rl, param_grid, scoring='f1_weighted', n_jobs=-1).fit(X_train, y_train[:, i])
+    clf_rl = GridSearchCV(pipe_rl, param_grid, scoring='balanced_accuracy', n_jobs=-1).fit(X_train, y_train[:, i])
 
     # Imprimimos los resultados 
-    print(f"Parámetros usados para ajustar el modelo de Regresión lineal: {clf_rl.best_params_}")
+    print(f"Parámetros usados para ajustar el modelo de Regresión logística: {clf_rl.best_params_}")
     print(f"\nBondad del modelo de Regresión Logística con características estandarizadas para el modelo {nombre}")
     y_pred = clf_rl.predict(X_train)
-    print(f"Ein = {1-f1_score(y_train[:, i], y_pred, average='weighted')}")
+    print(f"Ein = {1-balanced_accuracy_score(y_train[:, i], y_pred)}")
     y_pred = clf_rl.predict(X_test)
-    print(f"Etest = {1-f1_score(y_test[:, i], y_pred, average='weighted')}")
+    print(f"Etest = {1-balanced_accuracy_score(y_test[:, i], y_pred)}")
     print(f"Ecv = {1-clf_rl.best_score_}")
 
+    best_estimator = clf_rl
+    best_name = "Regresión Logística"
     stop()
 
     plot_confusion_matrix(clf_rl.best_estimator_, X_test, y_test[:, i], display_labels=labels[i], values_format='d')
-    plt.title(f"Matriz de confusión para el caso de {nombre} usando Regresión Logística")
+    plt.title(f"Matriz de confusión para el caso de {nombre}\n usando Regresión Logística")
     plt.ylabel(f"Clase verdadera")
     plt.xlabel(f"Clase predicha")
     plt.show()
@@ -224,39 +228,42 @@ for i, nombre in zip(np.arange(2), ('FHR (10 clases)', 'NSP (3 clases)')):
         'svm__class_weight': [None, 'balanced'],
         'svm__C': [1, 10, 100, 150, 200],
         'svm__random_state': [1]
-        },
-        {
-        'scaler': [StandardScaler(), MinMaxScaler()],
-        'poly__degree': [1, 2],
-        'svm': [SGDClassifier()],
-        'svm__loss': ['hinge'],
-        'svm__penalty': ['l1', 'l2'],
-        'svm__class_weight': [None, 'balanced'],
-        'svm__n_jobs': [-1],
-        'svm__alpha': [1e-4, 1e-3, 1e-2, 1e-1],
-        'svm__random_state': [1],
-        'svm__max_iter' :[100000]
         }
+        #{
+        #'scaler': [StandardScaler(), MinMaxScaler()],
+        #'poly__degree': [1, 2],
+        #'svm': [SGDClassifier()],
+        #'svm__loss': ['hinge'],
+        #'svm__penalty': ['l1', 'l2'],
+        #'svm__class_weight': [None, 'balanced'],
+        #'svm__n_jobs': [-1],
+        #'svm__alpha': [1e-4, 1e-3, 1e-2, 1e-1],
+        #'svm__random_state': [1],
+        #'svm__max_iter' :[100000]
+        #}
     ]
 
-    clf_svm = GridSearchCV(pipe_svm, param_grid, scoring='f1_weighted', n_jobs=-1)
+    clf_svm = GridSearchCV(pipe_svm, param_grid, scoring='balanced_accuracy', n_jobs=-1)
     clf_svm.fit(X_train, y_train[:, i])
 
     y_pred = clf_svm.predict(X_train)
-    print(f"Ein = {1-f1_score(y_train[:, i], y_pred, average='weighted')}")
+    print(f"Ein = {1-balanced_accuracy_score(y_train[:, i], y_pred)}")
     y_pred = clf_svm.predict(X_test)
-    print(f"Etest = {1-f1_score(y_test[:, i], y_pred, average='weighted')}")
+    print(f"Etest = {1-balanced_accuracy_score(y_test[:, i], y_pred)}")
     print(f"Ecv = {1-clf_svm.best_score_}")
 
     print(f"\nMejores hiperparámetros para este modelo: {clf_svm.best_params_}")
 
     stop()
     plot_confusion_matrix(clf_svm.best_estimator_, X_test, y_test[:, i], display_labels=labels[i], values_format='d')
-    plt.title(f"Matriz de confusión para el caso de {nombre} usando Support Vector Machine")
+    plt.title(f"Matriz de confusión para el caso de {nombre}\n usando Support Vector Machine")
     plt.ylabel(f"Clase verdadera")
     plt.xlabel(f"Clase predicha")
     plt.show()
 
+    if (clf_svm.best_score_ > best_estimator.best_score_):
+        best_estimator = clf_svm
+        best_name = "Support Vector Machine"
     stop()
 
     # Ajuste a través de Random Forest
@@ -274,23 +281,27 @@ for i, nombre in zip(np.arange(2), ('FHR (10 clases)', 'NSP (3 clases)')):
         'randomforest__random_state': [1]
     }
 
-    clf_rf = GridSearchCV(pipe_rf, param_grid, scoring='f1_weighted', n_jobs=-1)
+    clf_rf = GridSearchCV(pipe_rf, param_grid, scoring='balanced_accuracy', n_jobs=-1)
     clf_rf.fit(X_train, y_train[:, i])
 
     y_pred = clf_rf.predict(X_train)
-    print(f"Ein = {1-f1_score(y_train[:, i], y_pred, average='weighted')}")
+    print(f"Ein = {1-balanced_accuracy_score(y_train[:, i], y_pred)}")
     y_pred = clf_rf.predict(X_test)
-    print(f"Etest = {1-f1_score(y_test[:, i], y_pred, average='weighted')}")
+    print(f"Etest = {1-balanced_accuracy_score(y_test[:, i], y_pred)}")
     print(f"Ecv = {1-clf_rf.best_score_}")
 
     print(f"\nMejores hiperparámetros para este modelo: {clf_rf.best_params_}")
 
     stop()
     plot_confusion_matrix(clf_rf.best_estimator_, X_test, y_test[:, i], display_labels=labels[i], values_format='d')
-    plt.title(f"Matriz de confusión para el caso de {nombre} usando Random Forest")
+    plt.title(f"Matriz de confusión para el caso de {nombre}\n usando Random Forest")
     plt.ylabel(f"Clase verdadera")
     plt.xlabel(f"Clase predicha")
     plt.show()
+
+    if (clf_rf.best_score_ > best_estimator.best_score_):
+        best_estimator = clf_rf
+        best_name = "Random Forest"
 
     stop()
 
@@ -306,13 +317,13 @@ for i, nombre in zip(np.arange(2), ('FHR (10 clases)', 'NSP (3 clases)')):
         'adaboost__learning_rate': [0.01, 0.1, 1]
     }
 
-    clf_ab = GridSearchCV(pipe_ab, param_grid, scoring='f1_weighted', n_jobs=-1)
+    clf_ab = GridSearchCV(pipe_ab, param_grid, scoring='balanced_accuracy', n_jobs=-1)
     clf_ab.fit(X_train, y_train[:, i])
 
     y_pred = clf_ab.predict(X_train)
-    print(f"Ein = {1-f1_score(y_train[:, i], y_pred, average='weighted')}")
+    print(f"Ein = {1-balanced_accuracy_score(y_train[:, i], y_pred)}")
     y_pred = clf_ab.predict(X_test)
-    print(f"Etest = {1-f1_score(y_test[:, i], y_pred, average='weighted')}")
+    print(f"Etest = {1-balanced_accuracy_score(y_test[:, i], y_pred)}")
     print(f"Ecv = {1-clf_ab.best_score_}")
 
     print(f"\nMejores hiperparámetros para este modelo: {clf_ab.best_params_}")
@@ -320,9 +331,60 @@ for i, nombre in zip(np.arange(2), ('FHR (10 clases)', 'NSP (3 clases)')):
     stop()
 
     plot_confusion_matrix(clf_ab.best_estimator_, X_test, y_test[:, i], display_labels=labels[i], values_format='d')
-    plt.title(f"Matriz de confusión para el caso de {nombre} usando AdaBoost")
+    plt.title(f"Matriz de confusión para el caso de {nombre}\n usando AdaBoost")
     plt.ylabel(f"Clase verdadera")
     plt.xlabel(f"Clase predicha")
     plt.show()
 
+    if (clf_ab.best_score_ > best_estimator.best_score_):
+        best_estimator = clf_ab
+        best_name = "AdaBoost"
     stop()
+
+    stop()
+
+    # Ajuste a través de Perceptron Multicapa
+    print(f"\033[94;1;1mAjuste utilizando Perceptrón Multicapa\033[0m")
+
+    pipe_mlp = Pipeline(steps=[('scaler', 'passthrough'), ('poly', PolynomialFeatures()), ('mlp', MLPClassifier())])
+    param_grid = {
+        'scaler': [StandardScaler(), MinMaxScaler()],
+        'poly__degree' : [1, 2],
+        'mlp__hidden_layer_sizes' : [(50,), (100,)],
+        'mlp__alpha' : [1e-4, 1e-3, 1e-2, 1e-1],
+        'mlp__random_state' : [1],
+        'mlp__solver' : ['lbfgs', 'sgd', 'adam'],
+        'mlp__activation' : ['tanh', 'logistic'],
+        'mlp__tol' : [0.001],
+        'mlp__max_iter' : [10000]
+    }
+
+    clf_mlp = GridSearchCV(pipe_mlp, param_grid, scoring='balanced_accuracy', n_jobs=-1)
+    clf_mlp.fit(X_train, y_train[:, i])
+
+    y_pred = clf_mlp.predict(X_train)
+    print(f"Ein = {1-balanced_accuracy_score(y_train[:, i], y_pred)}")
+    y_pred = clf_mlp.predict(X_test)
+    print(f"Etest = {1-balanced_accuracy_score(y_test[:, i], y_pred)}")
+    print(f"Ecv = {1-clf_mlp.best_score_}")
+
+    print(f"\nMejores hiperparámetros para este modelo: {clf_mlp.best_params_}")
+
+    stop()
+
+    plot_confusion_matrix(clf_mlp.best_estimator_, X_test, y_test[:, i], display_labels=labels[i], values_format='d')
+    plt.title(f"Matriz de confusión para el caso de {nombre}\n usando Perceptrón Multicapa")
+    plt.ylabel(f"Clase verdadera")
+    plt.xlabel(f"Clase predicha")
+    plt.show()
+
+    if (clf_mlp.best_score_ > best_estimator.best_score_):
+        best_estimator = clf_mlp
+        best_name = "Perceptrón Multicapa"
+    stop()
+
+
+    print(f"El mejor modelo para la clasificación {nombre} es {best_name}")
+    y_pred = best_estimator.predict(X_test)
+    print(f"El reporte de clasificación de este modelo es:")
+    print(classification_report(y_test[:, i], y_pred, target_names=labels[i]))
