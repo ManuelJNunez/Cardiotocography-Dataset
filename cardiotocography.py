@@ -7,7 +7,7 @@
 # Proyecto Final: Ajuste del mejor modelo 
 # Dataset: Cardiotocography (https://archive.ics.uci.edu/ml/datasets/cardiotocography)
 
-# Manuel Jesús Núñez 
+# Manuel Jesús Núñez Ruiz
 # Javier Rodríguez Rodríguez 
 
 #############################
@@ -137,7 +137,7 @@ for i, nombre in zip(np.arange(2), ('FHR (10 clases)', 'NSP (3 clases)')):
 
     # Usamos un pipeline para preprocesar y ajustar los datos de forma automatizada
     pipe_rl = Pipeline(steps=[('scaler', 'passthrough'), ('poly', PolynomialFeatures()), ('solver', 'passthrough')])
-    """
+
     # Para la elección de hiper-parámetros, utilizamos Cross Validation entre distintos valores para cada hiperparámetro
     # Creamos dos grids, uno para utilizar la técnica de Gradiente Descendente Estocástico (SGD), y la otra para el solucionador
     # saga incorporado en la función LogisticRegression de sklearn.
@@ -202,7 +202,6 @@ for i, nombre in zip(np.arange(2), ('FHR (10 clases)', 'NSP (3 clases)')):
     plt.show()
 
     stop()
-    """
 
     # Ajuste mediante SVM
 
@@ -212,8 +211,8 @@ for i, nombre in zip(np.arange(2), ('FHR (10 clases)', 'NSP (3 clases)')):
     param_grid = [
         {
         'scaler': [StandardScaler(), MinMaxScaler()],
-        'svm' : [SVC()],
         'pca': [PCA(), 'passthrough'],
+        'svm' : [SVC()],
         'svm__kernel': ['poly'],
         'svm__degree': [1, 2, 3],
         'svm__gamma': ['scale', 'auto'],
@@ -316,7 +315,7 @@ for i, nombre in zip(np.arange(2), ('FHR (10 clases)', 'NSP (3 clases)')):
         'adaboost__n_estimators': [50, 100, 200, 250, 300],
         'adaboost__base_estimator': [DecisionTreeClassifier(max_depth=1), DecisionTreeClassifier(max_depth=5)],
         'adaboost__random_state': [1],
-        'adaboost__learning_rate': [0.01, 0.1, 1]
+        'adaboost__learning_rate': [0.1, 1, 1.01]
     }
 
     clf_ab = GridSearchCV(pipe_ab, param_grid, scoring='balanced_accuracy', n_jobs=-1)
@@ -348,10 +347,9 @@ for i, nombre in zip(np.arange(2), ('FHR (10 clases)', 'NSP (3 clases)')):
     # Ajuste a través de Perceptron Multicapa
     print(f"\033[94;1;1mAjuste utilizando Perceptrón Multicapa\033[0m")
 
-    pipe_mlp = Pipeline(steps=[('scaler', 'passthrough'), ('poly', PolynomialFeatures()), ('mlp', MLPClassifier())])
+    pipe_mlp = Pipeline(steps=[('scaler', 'passthrough'), ('mlp', MLPClassifier())])
     param_grid = {
         'scaler': [StandardScaler(), MinMaxScaler()],
-        'poly__degree' : [1, 2],
         'mlp__hidden_layer_sizes' : [(50,), (100,)],
         'mlp__alpha' : [1e-4, 1e-3, 1e-2, 1e-1],
         'mlp__random_state' : [1],
