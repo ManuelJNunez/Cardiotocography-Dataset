@@ -36,8 +36,8 @@ np.random.seed(1)
 
 # Función auxiliar para detener la ejecución del script entre cada apartado
 def stop():
-    #input("\nPulse ENTER para continuar\n")
-    pass
+    input("\nPulse ENTER para continuar\n")
+    #pass
     
 # Función para lectura de datos en formato .xls
 # Los datos son separados adecuadamente en variables predictoras y clase
@@ -137,7 +137,7 @@ for i, nombre in zip(np.arange(2), ('FHR (10 clases)', 'NSP (3 clases)')):
 
     # Usamos un pipeline para preprocesar y ajustar los datos de forma automatizada
     pipe_rl = Pipeline(steps=[('scaler', 'passthrough'), ('poly', PolynomialFeatures()), ('solver', 'passthrough')])
-    """
+    
     # Para la elección de hiper-parámetros, utilizamos Cross Validation entre distintos valores para cada hiperparámetro
     # Creamos dos grids, uno para utilizar la técnica de Gradiente Descendente Estocástico (SGD), y la otra para el solucionador
     # saga incorporado en la función LogisticRegression de sklearn.
@@ -163,20 +163,20 @@ for i, nombre in zip(np.arange(2), ('FHR (10 clases)', 'NSP (3 clases)')):
         'solver__max_iter' :[1000000]
         },
         # Para el uso de LogisticRegression el proceso es similar
-        #{
-        #'scaler': [StandardScaler(), MinMaxScaler()],
-        #'poly__degree': [1, 2],
-        #'solver': [LogisticRegression()],
-        ## Probamos valores de C, la intensidad de la regularización
-        #'solver__C' : [0.1, 1, 10],
-        ## la tolerancia a 3 decimales
-        #'solver__tol' : [0.001],
-        ## y el solucionador
-        #'solver__solver': ['saga'],
-        #'solver__penalty': ['l1', 'l2'],
-        #'solver__random_state' : [1],
-        #'solver__max_iter' : [100000]
-        #}
+        {
+        'scaler': [StandardScaler(), MinMaxScaler()],
+        'poly__degree': [1, 2],
+        'solver': [LogisticRegression()],
+        # Probamos valores de C, la intensidad de la regularización
+        'solver__C' : [0.1, 1, 10],
+        # la tolerancia a 3 decimales
+        'solver__tol' : [0.001],
+        # y el solucionador
+        'solver__solver': ['saga'],
+        'solver__penalty': ['l1', 'l2'],
+        'solver__random_state' : [1],
+        'solver__max_iter' : [100000]
+        }
     ]
 
     # Ajustamos el mejor modelo de entre los probados con sus distintos hiperparámetro, conservando aquel que proporcione mejor f1-score con peso
@@ -202,7 +202,6 @@ for i, nombre in zip(np.arange(2), ('FHR (10 clases)', 'NSP (3 clases)')):
     plt.show()
 
     stop()
-    """
 
     # Ajuste mediante SVM
 
@@ -231,18 +230,6 @@ for i, nombre in zip(np.arange(2), ('FHR (10 clases)', 'NSP (3 clases)')):
         'svm__C': [1, 10, 100, 150, 200],
         'svm__random_state': [1]
         }
-        #{
-        #'scaler': [StandardScaler(), MinMaxScaler()],
-        #'poly__degree': [1, 2],
-        #'svm': [SGDClassifier()],
-        #'svm__loss': ['hinge'],
-        #'svm__penalty': ['l1', 'l2'],
-        #'svm__class_weight': [None, 'balanced'],
-        #'svm__n_jobs': [-1],
-        #'svm__alpha': [1e-4, 1e-3, 1e-2, 1e-1],
-        #'svm__random_state': [1],
-        #'svm__max_iter' :[100000]
-        #}
     ]
 
     clf_svm = GridSearchCV(pipe_svm, param_grid, scoring='balanced_accuracy', n_jobs=-1)
@@ -341,18 +328,16 @@ for i, nombre in zip(np.arange(2), ('FHR (10 clases)', 'NSP (3 clases)')):
     if (clf_ab.best_score_ > best_estimator.best_score_):
         best_estimator = clf_ab
         best_name = "AdaBoost"
-    stop()
 
     stop()
 
     # Ajuste a través de Perceptron Multicapa
     print(f"\033[94;1;1mAjuste utilizando Perceptrón Multicapa\033[0m")
 
-    pipe_mlp = Pipeline(steps=[('scaler', 'passthrough'), ('poly', PolynomialFeatures()), ('mlp', MLPClassifier())])
+    pipe_mlp = Pipeline(steps=[('scaler', 'passthrough'), ('mlp', MLPClassifier())])
     param_grid = {
         'scaler': [StandardScaler(), MinMaxScaler()],
-        'poly__degree' : [1, 2],
-        'mlp__hidden_layer_sizes' : [(50,), (100,)],
+        'mlp__hidden_layer_sizes' : [(50, 50, 50), (100, 100, 100)],
         'mlp__alpha' : [1e-4, 1e-3, 1e-2, 1e-1],
         'mlp__random_state' : [1],
         'mlp__solver' : ['lbfgs', 'sgd', 'adam'],
