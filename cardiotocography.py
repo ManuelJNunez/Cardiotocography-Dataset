@@ -350,7 +350,7 @@ for i, nombre in zip(np.arange(2), ('FHR (10 clases)', 'NSP (3 clases)')):
     pipe_mlp = Pipeline(steps=[('scaler', 'passthrough'), ('mlp', MLPClassifier())])
     param_grid = {
         'scaler': [StandardScaler(), MinMaxScaler()],
-        'mlp__hidden_layer_sizes' : [(50,), (100,)],
+        'mlp__hidden_layer_sizes' : [(50,50,50), (100,100,100)],
         'mlp__alpha' : [1e-4, 1e-3, 1e-2, 1e-1],
         'mlp__random_state' : [1],
         'mlp__solver' : ['lbfgs', 'sgd', 'adam'],
