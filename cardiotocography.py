@@ -54,6 +54,8 @@ def read_data(file_name):
     feature_names = data.columns
     data = np.asarray(data)
     X = data[:,:-2]
+    # y es una matriz de parejas, con la clasificación del dato según los dos problemas de clasificación tratado.
+    # De cara al ajuste, se trata cada columna individualmente correspondiente a cada problema
     y = data[:,[-2, -1]]
 
     return X, y, feature_names
@@ -131,7 +133,7 @@ plot_features_correlation(X, feature_names[:-2])
 # Como el número de instancias (2126) es suficientemente alto, separamos en 70% training y 30% test
 X_train, X_test, y_train, y_test = train_test_split(X, y, train_size=0.7, random_state=1)
 
-# Evaluamos los distintos modelos para la clasificación FHR y NSP individualmente
+# Evaluamos los distintos modelos para la clasificación FHR (10 clases) y NSP (3 clases) individualmente.
 for i, nombre in zip(np.arange(2), ('FHR (10 clases)', 'NSP (3 clases)')):
 
     # Clasificación utilizada
@@ -186,22 +188,27 @@ for i, nombre in zip(np.arange(2), ('FHR (10 clases)', 'NSP (3 clases)')):
         }
     ]
 
-    # Ajustamos el mejor modelo de entre los probados con sus distintos hiperparámetro, conservando aquel que proporcione mejor f1-score con peso
+    # Ajustamos el mejor modelo de entre los probados con sus distintos hiperparámetro, conservando aquel que proporcione la mayor precisión, 
+    # balanceada respecto al tamaño de cada clase
     clf_rl = GridSearchCV(pipe_rl, param_grid, scoring='balanced_accuracy', n_jobs=-1).fit(X_train, y_train[:, i])
 
     # Imprimimos los resultados 
     print(f"Parámetros usados para ajustar el modelo de Regresión logística: {clf_rl.best_params_}")
     print(f"\nBondad del modelo de Regresión Logística con características estandarizadas para el modelo {nombre}")
+    # Para el cálculo de errores, hacemos una predicción sobre el conjunto Test separado inicialmente
+    # y calculamos la precisión balanceada. Para expresarlo en términos del error, hacemos 1 - accuracy
     y_pred = clf_rl.predict(X_train)
     print(f"Ein = {1-balanced_accuracy_score(y_train[:, i], y_pred)}")
     y_pred = clf_rl.predict(X_test)
     print(f"Etest = {1-balanced_accuracy_score(y_test[:, i], y_pred)}")
     print(f"Ecv = {1-clf_rl.best_score_}")
 
+    # Almacenamos este modelo como el mejor estimador, de cara a compararlo con los otros a utilizar
     best_estimator = clf_rl
     best_name = "Regresión Logística"
     stop()
 
+    # Apoyándonos en la función de Scikit-Learn, graficamos la matriz de confusión resultante para el conjunto Test.
     plot_confusion_matrix(clf_rl.best_estimator_, X_test, y_test[:, i], display_labels=labels[i], values_format='d')
     plt.title(f"Matriz de confusión para el caso de {nombre}\n usando Regresión Logística")
     plt.ylabel(f"Clase verdadera")
@@ -214,18 +221,31 @@ for i, nombre in zip(np.arange(2), ('FHR (10 clases)', 'NSP (3 clases)')):
 
     print(f"\033[94;1;1mAjuste utilizando Support Vector Machine\033[0m")
 
+    # El procedimiento es similar al realizado para modelos lineales. Esta vez, en vez de considerar transformaciones no lineales, contemplamos el uso de PCA
+    # para reducir la dimensionalidad del problema, pues el análisis de distintos grados es realizado por el kernel polinomial
     pipe_svm = Pipeline(steps=[('scaler', 'passthrough'), ('pca', 'passthrough'), ('svm', SVC())])
     param_grid = [
+        # Creamos un grid con los parámetros usados por SVM con kernel polinomial
         {
+        # Fijamos los métodos de estandarización
         'scaler': [StandardScaler(), MinMaxScaler()],
+        # y el uso de PCA
         'pca': [PCA(), 'passthrough'],
+        # Fijamos el kernel polinomial
         'svm__kernel': ['poly'],
+        # y los distintos grados con los que ajustará
         'svm__degree': [1, 2, 3],
+        # Las formas de calcular el coeficiente del kernel
         'svm__gamma': ['scale', 'auto'],
+        # Consideramos si balancear los pesos en función del tamaño de las clases
         'svm__class_weight': [None, 'balanced'],
+        # Y la intensidad de la regulación
         'svm__C': [1, 10, 100, 1000],
         'svm__random_state': [1]
         },
+        # Repetimos el proceso para el kernel RBF-Gaussiano, evitando especificar grados, 
+        # pues este kernel no utiliza tal parámetro y de esa forma reduce el tiempo empleado
+        # en el ajuste.
         {
         'scaler': [StandardScaler(), MinMaxScaler()],
         'pca': [PCA(), 'passthrough'],
@@ -237,6 +257,7 @@ for i, nombre in zip(np.arange(2), ('FHR (10 clases)', 'NSP (3 clases)')):
         }
     ]
 
+    # El procedimiento de Validación Cruzada y cálculo de errores es similar
     clf_svm = GridSearchCV(pipe_svm, param_grid, scoring='balanced_accuracy', n_jobs=-1)
     clf_svm.fit(X_train, y_train[:, i])
 
@@ -249,12 +270,16 @@ for i, nombre in zip(np.arange(2), ('FHR (10 clases)', 'NSP (3 clases)')):
     print(f"\nMejores hiperparámetros para este modelo: {clf_svm.best_params_}")
 
     stop()
+    
+    # Al igual que el proceso de graficación de la matriz de confusión
     plot_confusion_matrix(clf_svm.best_estimator_, X_test, y_test[:, i], display_labels=labels[i], values_format='d')
     plt.title(f"Matriz de confusión para el caso de {nombre}\n usando Support Vector Machine")
     plt.ylabel(f"Clase verdadera")
     plt.xlabel(f"Clase predicha")
     plt.show()
 
+    # Comparamos el resultado del estimador contra el mejor hasta ahora, que es RL al ser el único probado
+    # si es mejor, lo reemplazamos
     if (clf_svm.best_score_ > best_estimator.best_score_):
         best_estimator = clf_svm
         best_name = "Support Vector Machine"
@@ -264,16 +289,24 @@ for i, nombre in zip(np.arange(2), ('FHR (10 clases)', 'NSP (3 clases)')):
     print(f"\033[94;1;1mAjuste utilizando RandomForestClassifier\033[0m")
 
     pipe_rf = Pipeline(steps=[('randomforest', RandomForestClassifier())])
+    # Creamos un único grid en este caso, pues solo utilizamos una función y no hay necesidad de limitar algún parámetro 
+    # (como hicimos con degree y el tipo de kernel en SVM)
     param_grid = {
+        # El número de árboles 
         'randomforest__n_estimators': [100, 200, 250, 300],
+        # La máxima profundidad de cada árbol
         'randomforest__max_depth': [10, 11, 12],
+        # El criterio para medir la calidad de la división en cada nodo del árbol
         'randomforest__criterion': ['gini', 'entropy'],
+        # El criterio para el número de atributos considerados en cada división
         'randomforest__max_features': ['sqrt'],
+        # La forma en que se balancean los pesos según el tamaño de las clases
         'randomforest__class_weight': ['balanced', 'balanced_subsample'],
         'randomforest__n_jobs': [-1],
         'randomforest__random_state': [1]
     }
 
+    # Procedimiento similar al realizado en SVM. Tanto en el GridSearch
     clf_rf = GridSearchCV(pipe_rf, param_grid, scoring='balanced_accuracy', n_jobs=-1)
     clf_rf.fit(X_train, y_train[:, i])
 
@@ -286,12 +319,15 @@ for i, nombre in zip(np.arange(2), ('FHR (10 clases)', 'NSP (3 clases)')):
     print(f"\nMejores hiperparámetros para este modelo: {clf_rf.best_params_}")
 
     stop()
+
+    # Como en la matriz de confusión
     plot_confusion_matrix(clf_rf.best_estimator_, X_test, y_test[:, i], display_labels=labels[i], values_format='d')
     plt.title(f"Matriz de confusión para el caso de {nombre}\n usando Random Forest")
     plt.ylabel(f"Clase verdadera")
     plt.xlabel(f"Clase predicha")
     plt.show()
 
+    # Como en la comparación con el mejor modelo
     if (clf_rf.best_score_ > best_estimator.best_score_):
         best_estimator = clf_rf
         best_name = "Random Forest"
@@ -302,13 +338,20 @@ for i, nombre in zip(np.arange(2), ('FHR (10 clases)', 'NSP (3 clases)')):
     print(f"\033[94;1;1mAjuste utilizando AdaBoostClassifier\033[0m")
 
     pipe_ab = Pipeline(steps=[('adaboost', AdaBoostClassifier())])
+    # Al igual que en Random Forest, AdaBoost utiliza un único grid, y su pipeline no contiene ninguna función adicional
     param_grid = {
+        # El número de estimadores empleados
         'adaboost__n_estimators': [50, 100, 200, 250, 300],
+        # El estimador de base utilizado en el Boosting. Consideramos árboles de decisión con profundidad máxima de 1 y 6, y pesos balanceados
+        # respecto al tamaño de las clases en ambos casos
         'adaboost__base_estimator': [DecisionTreeClassifier(max_depth=1, class_weight='balanced'), DecisionTreeClassifier(max_depth=6, class_weight='balanced')],
         'adaboost__random_state': [1],
+        # Las tasas de aprendizaje que sigue el proceso de clasificación
         'adaboost__learning_rate': [1, 1.1, 1.2]
     }
 
+    # El proceso de Validación Cruzada mediante GridSearch, la graficación de la matriz de confusión
+    # y la comparación con el mejor modelo permanecen iguales a los casos anteriores.
     clf_ab = GridSearchCV(pipe_ab, param_grid, scoring='balanced_accuracy', n_jobs=-1)
     clf_ab.fit(X_train, y_train[:, i])
 
@@ -337,18 +380,27 @@ for i, nombre in zip(np.arange(2), ('FHR (10 clases)', 'NSP (3 clases)')):
     # Ajuste a través de Perceptron Multicapa
     print(f"\033[94;1;1mAjuste utilizando Perceptrón Multicapa\033[0m")
 
+    # Volvemos a considerar la estandarización de los datos.
     pipe_mlp = Pipeline(steps=[('scaler', 'passthrough'), ('mlp', MLPClassifier())])
     param_grid = {
+        # A través de las dos funciones provistas por Scikit-Learn
         'scaler': [StandardScaler(), MinMaxScaler()],
+        # Contemplamos dos modelos: 3 capas ocultas de 50 neuronas cada una, y 3 capas ocultas de 100 neuronas cada una
         'mlp__hidden_layer_sizes' : [(50, 50, 50), (100, 100, 100)],
+        # distintos valores de alfa para la regularización l2 que se hace por defecto
         'mlp__alpha' : [1e-4, 1e-3, 1e-2, 1e-1],
         'mlp__random_state' : [1],
+        # distintos algoritmos para la implementación
         'mlp__solver' : ['lbfgs', 'sgd', 'adam'],
+        # dos funciones similares para determinar la activación de las capas ocultas
         'mlp__activation' : ['tanh', 'logistic'],
+        # fijamos la tolerancia a 3 decimales
         'mlp__tol' : [0.001],
+        # y el máximo de iteraciones
         'mlp__max_iter' : [10000]
     }
 
+    # CV, Matriz de confusión y comparación similar a todos los procesos anteriores
     clf_mlp = GridSearchCV(pipe_mlp, param_grid, scoring='balanced_accuracy', n_jobs=-1)
     clf_mlp.fit(X_train, y_train[:, i])
 
@@ -373,7 +425,8 @@ for i, nombre in zip(np.arange(2), ('FHR (10 clases)', 'NSP (3 clases)')):
         best_name = "Perceptrón Multicapa"
     stop()
 
-
+    # Finalmente, generamos un reporte de clasificación del mejor modelo
+    # así como indicar de cuál se trata.
     print(f"El mejor modelo para la clasificación {nombre} es {best_name}")
     y_pred = best_estimator.predict(X_test)
     print(f"El reporte de clasificación de este modelo es:")
