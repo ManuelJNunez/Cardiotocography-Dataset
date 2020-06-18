@@ -169,6 +169,8 @@ for i, nombre in zip(np.arange(2), ('FHR (10 clases)', 'NSP (3 clases)')):
         'solver': [LogisticRegression()],
         # Probamos valores de C, la intensidad de la regularización
         'solver__C' : [0.1, 1, 10],
+        # si se aplica balanceo a los pesos,
+        'solver__class_weight': ['balanced'],
         # la tolerancia a 3 decimales
         'solver__tol' : [0.001],
         # y el solucionador
