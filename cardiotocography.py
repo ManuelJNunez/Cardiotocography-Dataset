@@ -31,7 +31,12 @@ from sklearn.preprocessing import (MinMaxScaler, PolynomialFeatures,
 from sklearn.svm import SVC
 from sklearn.tree import DecisionTreeClassifier
 from sklearn.decomposition import PCA
+from warnings import filterwarnings
 
+# Evita que advertencias de sklearn se impriman en pantalla
+filterwarnings('ignore')
+
+# Inicialización de semilla para los generadores aleatorios
 np.random.seed(1)
 
 # Función auxiliar para detener la ejecución del script entre cada apartado
@@ -202,7 +207,7 @@ for i, nombre in zip(np.arange(2), ('FHR (10 clases)', 'NSP (3 clases)')):
     plt.ylabel(f"Clase verdadera")
     plt.xlabel(f"Clase predicha")
     plt.show()
-
+    
     stop()
 
     # Ajuste mediante SVM
