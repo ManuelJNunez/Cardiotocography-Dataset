@@ -42,7 +42,6 @@ np.random.seed(1)
 # Función auxiliar para detener la ejecución del script entre cada apartado
 def stop():
     input("\nPulse ENTER para continuar\n")
-    #pass
     
 # Función para lectura de datos en formato .xls
 # Los datos son separados adecuadamente en variables predictoras y clase
@@ -138,7 +137,7 @@ for i, nombre in zip(np.arange(2), ('FHR (10 clases)', 'NSP (3 clases)')):
 
     # Clasificación utilizada
     print(f"\033[92;1;4mCLASIFICACIÓN {nombre}\033[0m")
-
+    
     # Modelo 
     print(f"\033[94;1;1mAjuste utilizando Regresión Logística (modelo lineal)\033[0m")
 
@@ -206,6 +205,7 @@ for i, nombre in zip(np.arange(2), ('FHR (10 clases)', 'NSP (3 clases)')):
     # Almacenamos este modelo como el mejor estimador, de cara a compararlo con los otros a utilizar
     best_estimator = clf_rl
     best_name = "Regresión Logística"
+    best_score = balanced_accuracy_score(y_test[:, i], y_pred)
     stop()
 
     # Apoyándonos en la función de Scikit-Learn, graficamos la matriz de confusión resultante para el conjunto Test.
@@ -280,9 +280,10 @@ for i, nombre in zip(np.arange(2), ('FHR (10 clases)', 'NSP (3 clases)')):
 
     # Comparamos el resultado del estimador contra el mejor hasta ahora, que es RL al ser el único probado
     # si es mejor, lo reemplazamos
-    if (clf_svm.best_score_ > best_estimator.best_score_):
+    if (balanced_accuracy_score(y_test[:, i], y_pred) > best_score):
         best_estimator = clf_svm
         best_name = "Support Vector Machine"
+        best_score = balanced_accuracy_score(y_test[:, i], y_pred)
     stop()
 
     # Ajuste a través de Random Forest
@@ -328,16 +329,16 @@ for i, nombre in zip(np.arange(2), ('FHR (10 clases)', 'NSP (3 clases)')):
     plt.show()
 
     # Como en la comparación con el mejor modelo
-    if (clf_rf.best_score_ > best_estimator.best_score_):
+    if (balanced_accuracy_score(y_test[:, i], y_pred) > best_score):
         best_estimator = clf_rf
         best_name = "Random Forest"
-
+        best_score = balanced_accuracy_score(y_test[:, i], y_pred)
     stop()
-
+    
     # Ajuste a través de Boosting
     print(f"\033[94;1;1mAjuste utilizando AdaBoostClassifier\033[0m")
 
-    pipe_ab = Pipeline(steps=[('adaboost', AdaBoostClassifier())])
+    pipe_ab = Pipeline(steps=[('pca', 'passthrough'), ('adaboost', AdaBoostClassifier())])
     # Al igual que en Random Forest, AdaBoost utiliza un único grid, y su pipeline no contiene ninguna función adicional
     param_grid = {
         # El número de estimadores empleados
@@ -370,11 +371,11 @@ for i, nombre in zip(np.arange(2), ('FHR (10 clases)', 'NSP (3 clases)')):
     plt.ylabel(f"Clase verdadera")
     plt.xlabel(f"Clase predicha")
     plt.show()
-
-    if (clf_ab.best_score_ > best_estimator.best_score_):
+    
+    if (balanced_accuracy_score(y_test[:, i], y_pred) > best_score):
         best_estimator = clf_ab
         best_name = "AdaBoost"
-
+        best_score = balanced_accuracy_score(y_test[:, i], y_pred)
     stop()
 
     # Ajuste a través de Perceptron Multicapa
@@ -420,9 +421,10 @@ for i, nombre in zip(np.arange(2), ('FHR (10 clases)', 'NSP (3 clases)')):
     plt.xlabel(f"Clase predicha")
     plt.show()
 
-    if (clf_mlp.best_score_ > best_estimator.best_score_):
+    if (balanced_accuracy_score(y_test[:, i], y_pred) > best_score):
         best_estimator = clf_mlp
         best_name = "Perceptrón Multicapa"
+        best_score = balanced_accuracy_score(y_test[:, i], y_pred)
     stop()
 
     # Finalmente, generamos un reporte de clasificación del mejor modelo
@@ -431,3 +433,5 @@ for i, nombre in zip(np.arange(2), ('FHR (10 clases)', 'NSP (3 clases)')):
     y_pred = best_estimator.predict(X_test)
     print(f"El reporte de clasificación de este modelo es:")
     print(classification_report(y_test[:, i], y_pred, target_names=labels[i]))
+    stop()
+    
