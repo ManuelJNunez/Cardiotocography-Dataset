@@ -263,9 +263,8 @@ for i, nombre in zip(np.arange(2), ('FHR (10 clases)', 'NSP (3 clases)')):
     # Ajuste a través de Random Forest
     print(f"\033[94;1;1mAjuste utilizando RandomForestClassifier\033[0m")
 
-    pipe_rf = Pipeline(steps=[('scaler', 'passthrough'), ('randomforest', RandomForestClassifier())])
+    pipe_rf = Pipeline(steps=[('randomforest', RandomForestClassifier())])
     param_grid = {
-        'scaler': [StandardScaler(), MinMaxScaler()],
         'randomforest__n_estimators': [100, 200, 250, 300],
         'randomforest__max_depth': [10, 11, 12],
         'randomforest__criterion': ['gini', 'entropy'],
@@ -302,9 +301,8 @@ for i, nombre in zip(np.arange(2), ('FHR (10 clases)', 'NSP (3 clases)')):
     # Ajuste a través de Boosting
     print(f"\033[94;1;1mAjuste utilizando AdaBoostClassifier\033[0m")
 
-    pipe_ab = Pipeline(steps=[('scaler', 'passthrough'), ('adaboost', AdaBoostClassifier())])
+    pipe_ab = Pipeline(steps=[('adaboost', AdaBoostClassifier())])
     param_grid = {
-        'scaler': [StandardScaler(), MinMaxScaler()],
         'adaboost__n_estimators': [50, 100, 200, 250, 300],
         'adaboost__base_estimator': [DecisionTreeClassifier(max_depth=1, class_weight='balanced'), DecisionTreeClassifier(max_depth=6, class_weight='balanced')],
         'adaboost__random_state': [1],
